@@ -52,6 +52,7 @@ var certsList map[string]int64 = map[string]int64{}
 type Client interface {
 	Login(username string, password string, apiKey string) error
 	Call(method string, timeout int64, params interface{}) (json.RawMessage, error)
+	Close() error
 }
 
 // uses the configuration 'Environment' setting to get either a truenas_api.Client or a mock.Client used for testing.
@@ -200,6 +201,7 @@ func InstallCertificate(cfg *config.Config) error {
 		log.Println("client is Type:", reflect.TypeOf(client))
 	}
 	log.Printf("installing certificate: %s", certName)
+	defer client.Close()
 
 	if err != nil {
 		return fmt.Errorf("NewClient() error: %v", err)

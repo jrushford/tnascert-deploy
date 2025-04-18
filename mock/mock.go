@@ -84,6 +84,10 @@ func (c *Client) Call(method string, timeout int64, params interface{}) (json.Ra
 	return nil, nil
 }
 
+func (c *Client) Close() error {
+	return nil
+}
+
 func (c *Client) Login(username string, password string, apiKey string) error {
 	if apiKey == "test" {
 		return nil
