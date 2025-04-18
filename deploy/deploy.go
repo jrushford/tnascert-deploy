@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ncruces/go-strftime"
+	"github.com/truenas/api_client_golang/truenas_api"
 	"log"
 	"os"
 	"reflect"
@@ -28,7 +29,6 @@ import (
 	"time"
 	"tnascert-deploy/config"
 	"tnascert-deploy/mock"
-	"truenas_api/truenas_api"
 )
 
 type CertificateCreateResponse struct {
