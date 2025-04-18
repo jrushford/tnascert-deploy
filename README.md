@@ -35,8 +35,6 @@ tnas-cert.ini<br>
 #### BUILD NOTES
 
 This tool uses the TrueNAS Scale JSON-RPC 2.0 API and the TrueNAS client API module.
-To build, fetch the [truenas_api/truenas_api module at github](https://github.com/truenas/api_client_golang.git) 
-and install it in your go build path.<br>
 
 Then use ***go build***
 
