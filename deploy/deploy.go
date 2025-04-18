@@ -31,6 +31,18 @@ import (
 	"truenas_api/truenas_api"
 )
 
+type CertificateCreateResponse struct {
+	JsonRPC string `json:"jsonrpc"`
+	ID      int    `json:"id"`
+	Result  int    `json:"result"`
+}
+
+type CertificateListResponse struct {
+	JsonRPC string                   `json:"jsonrpc"`
+	ID      int                      `json:"id"`
+	Result  []map[string]interface{} `json:"result"`
+}
+
 const endpoint = "api/current"
 
 // certificate list obtained from TrueNAS client or the mock client
@@ -111,12 +123,12 @@ func createCertificate(client Client, certName string, cfg *config.Config) error
 		if cfg.Debug {
 			log.Printf("createCertificate(): certificate.create response was: %s", string(resp))
 		}
-		respMap := make(map[string]interface{})
-		err = json.Unmarshal(resp, &respMap)
+		var response CertificateCreateResponse
+		err = json.Unmarshal(resp, &response)
 		if err != nil {
 			return fmt.Errorf("createCertificate(): %v", err)
 		}
-		log.Printf("createCertificate(): Job created id: %v", respMap["result"])
+		log.Printf("createCertificate(): Job created id: %v", response.Result)
 	}
 	return nil
 }
@@ -139,32 +151,31 @@ func loadCertificateList(client Client, certName string, cfg *config.Config) err
 			log.Printf("resp: %v", string(resp))
 		}
 
-		respMap := make(map[string]interface{})
-		err = json.Unmarshal(resp, &respMap)
+		var response CertificateListResponse
+		err = json.Unmarshal(resp, &response)
 		if err != nil {
 			return err
 		}
 
-		list := respMap["result"].([]interface{})
-		for _, v := range list {
-			var m = v.(map[string]interface{})
-			_, ok := certsList[m["name"].(string)]
+		for _, v := range response.Result {
+			var cert = v
+			_, ok := certsList[cert["name"].(string)]
 			// add certificate to the cert_list if not already there
 			// and skipping those that do not match the cert_basename
 			if !ok {
-				var nm string = m["name"].(string)
-				value := m["id"].(float64)
-				id := int64(value)
+				var name string = cert["name"].(string)
+				idValue := cert["id"].(float64)
+				id := int64(idValue)
 				// only add certs that match the Cert_basename to the list
-				if strings.HasPrefix(nm, cfg.CertBasename) {
-					certsList[nm] = id
+				if strings.HasPrefix(name, cfg.CertBasename) {
+					certsList[name] = id
 					if cfg.Debug {
-						log.Printf("certificate name: %v, is: %d", m["name"], id)
+						log.Printf("certificate name: %v, is: %d", cert["name"], id)
 					}
 				}
 			}
 			if id, ok := certsList[certName]; ok == true {
-				log.Printf("found new certificate: %v, id: %d", m["name"], id)
+				log.Printf("found new certificate: %v, id: %d", cert["name"], id)
 				inlist = true
 			}
 		}
