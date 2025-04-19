@@ -26,6 +26,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/truenas/api_client_golang/truenas_api"
 	"tnascert-deploy/config"
 )
 
@@ -84,6 +85,13 @@ func (c *Client) Call(method string, timeout int64, params interface{}) (json.Ra
 	return nil, nil
 }
 
+func (c *Client) CallWithJob(method string, params interface{}, callback func(progress float64, state string, desc string)) (*truenas_api.Job, error) {
+	var job truenas_api.Job
+	job.ID = 1
+
+	return &job, nil
+}
+
 func (c *Client) Close() error {
 	return nil
 }
@@ -97,4 +105,8 @@ func (c *Client) Login(username string, password string, apiKey string) error {
 
 func GetCertName(cfg *config.Config) string {
 	return defaultCertName
+}
+
+func (c *Client) SubscribeToJobs() error {
+	return nil
 }

@@ -61,20 +61,20 @@ func main() {
 
 	cfg, err := config.New(*configFile, section)
 	if err != nil {
-		log.Fatalln("Error loading config,", err)
+		log.Fatalln("error loading config,", err)
 	}
 
 	// run a simple check of the certificate and private key before deployment.
 	err = verifyCertificateKeyPair(cfg.FullChainPath, cfg.Private_key_path)
 	if err != nil {
-		log.Fatalf("verifying certificate key pair, %v", err)
+		log.Fatalf("verifying the certificate key pair, %v", err)
 	} else {
-		log.Println("verified certificate key pair")
+		log.Println("verified the certificate key pair")
 	}
 
 	// deploy the certificate key pair
 	err = deploy.InstallCertificate(cfg)
 	if err != nil {
-		log.Printf("Installing certificate, %v", err)
+		log.Printf("installing the certificate failed, %v", err)
 	}
 }

@@ -36,7 +36,7 @@ tnas-cert.ini<br>
 
 This tool uses the TrueNAS Scale JSON-RPC 2.0 API and the TrueNAS client API module.
 
-Then use ***go build***
+Clone this repository and build the tool using ***go build***
 
 #### Contact
 John J. Rushford<br>

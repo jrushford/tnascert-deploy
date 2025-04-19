@@ -52,23 +52,25 @@ var certsList map[string]int64 = map[string]int64{}
 type Client interface {
 	Login(username string, password string, apiKey string) error
 	Call(method string, timeout int64, params interface{}) (json.RawMessage, error)
+	CallWithJob(method string, params interface{}, callback func(progress float64, state string, desc string)) (*truenas_api.Job, error)
 	Close() error
+	SubscribeToJobs() error
 }
 
 // uses the configuration 'Environment' setting to get either a truenas_api.Client or a mock.Client used for testing.
 func NewClient(serverURL string, cfg *config.Config) (Client, string, error) {
 
 	if cfg.Environment == "production" {
-		log.Println("Using production environment")
+		log.Println("using the production environment")
 		certName := cfg.CertBasename + strftime.Format("-%Y-%m-%d-%s", time.Now())
 		client, err := truenas_api.NewClient(serverURL, cfg.TlsSkipVerify)
 		if err != nil {
-			return client, certName, fmt.Errorf("NewClient(): %v", err)
+			return client, certName, fmt.Errorf("error connecting to the server, %v", err)
 		} else {
 			return client, certName, nil
 		}
 	} else if cfg.Environment == "test" {
-		log.Println("NewClient(): Using test environment")
+		log.Println("using test environment")
 		certName := mock.GetCertName(cfg)
 		client, err := mock.NewClient(serverURL, cfg.TlsSkipVerify)
 		if err != nil {
@@ -77,22 +79,22 @@ func NewClient(serverURL string, cfg *config.Config) (Client, string, error) {
 			return client, certName, nil
 		}
 	}
-	return nil, "", fmt.Errorf("NewClient(): Invalid environment")
+	return nil, "", fmt.Errorf("invalid environment")
 }
 
 // login with an API key
 func clientLogin(client Client, cfg *config.Config) error {
 	username, password := "", ""
 	if cfg.Api_key == "" {
-		return fmt.Errorf("NewClient(): No api key")
+		return fmt.Errorf("login failure, o api key")
 	}
 	apikey := cfg.Api_key
 	err := client.Login(username, password, apikey)
 	if err == nil {
-		log.Println("clientLogin(): successfully logged in")
+		log.Println("successfully logged in")
 		return nil
 	}
-	return fmt.Errorf("clientLogin: %v", err)
+	return fmt.Errorf("login failed, %v", err)
 }
 
 // create the certificate in TrueNAS
@@ -100,16 +102,20 @@ func createCertificate(client Client, certName string, cfg *config.Config) error
 	// read in the certificate data
 	certPem, err := os.ReadFile(cfg.FullChainPath)
 	if err != nil {
-		return fmt.Errorf("createCertificate(): could not load the certificate, %v", err)
+		return fmt.Errorf("could not load the pem encoded certificate, %v", err)
 	}
 	// read in the private key data
 	keyPem, err := os.ReadFile(cfg.Private_key_path)
 	if err != nil {
-		return fmt.Errorf("createCertificate(): could not load the private key, %v", err)
+		return fmt.Errorf("could not load the pem encoded private key, %v", err)
 	}
 
 	if cfg.Debug {
-		log.Printf("createCertificate(): install certificate: %s", certName)
+		log.Printf("install certificate: %s", certName)
+	}
+
+	if err = client.SubscribeToJobs(); err != nil {
+		return fmt.Errorf("unable to subscribe to job notifications, %v", err)
 	}
 
 	params := map[string]string{"name": certName, "certificate": string(certPem),
@@ -117,20 +123,32 @@ func createCertificate(client Client, certName string, cfg *config.Config) error
 	args := []map[string]string{params}
 
 	// call the api to create and deploy the certificate
-	resp, err := client.Call("certificate.create", 10, args)
+	job, err := client.CallWithJob("certificate.create", args, func(progress float64, state string, desc string) {
+		log.Printf("Job Progress: %.2f%%, State: %s, Description: %s", progress, state, desc)
+	})
 	if err != nil {
-		return fmt.Errorf("createCertificate(): %v", err)
-	} else {
-		if cfg.Debug {
-			log.Printf("createCertificate(): certificate.create response was: %s", string(resp))
-		}
-		var response CertificateCreateResponse
-		err = json.Unmarshal(resp, &response)
-		if err != nil {
-			return fmt.Errorf("createCertificate(): %v", err)
-		}
-		log.Printf("createCertificate(): Job created id: %v", response.Result)
+		return fmt.Errorf("failed to create the certificate job,  %v", err)
 	}
+
+	log.Printf("started the certificate creation job with ID: %d", job.ID)
+
+	// TODO implement this functionality with goroutine mock.Client for testing
+	if cfg.Environment == "production" {
+		// Monitor the progress of the job.
+		for !job.Finished {
+			select {
+			case progress := <-job.ProgressCh:
+				log.Printf("Job progress: %.2f%%", progress)
+			case err := <-job.DoneCh:
+				if err != "" {
+					return fmt.Errorf("Job failed: %v", err)
+				} else {
+					log.Println("Job completed successfully!")
+				}
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -138,53 +156,49 @@ func createCertificate(client Client, certName string, cfg *config.Config) error
 // including the newly created certificate
 func loadCertificateList(client Client, certName string, cfg *config.Config) error {
 	var inlist bool = false
-	var count = 0
 
-	// poll until the list shows up with the newly created certificate or give up after 10 seconds.
-	for !inlist && count != 10 {
-		count++
-		args := []string{}
-		resp, err := client.Call("app.certificate_choices", 10, args)
-		if err != nil {
-			return err
-		}
-		if cfg.Debug {
-			log.Printf("resp: %v", string(resp))
-		}
+	args := []string{}
+	resp, err := client.Call("app.certificate_choices", 10, args)
+	if err != nil {
+		return fmt.Errorf("failed to get a certifcate list from the server,  %v", err)
+	}
+	if cfg.Debug {
+		log.Printf("certificate list response: %v", string(resp))
+	}
 
-		var response CertificateListResponse
-		err = json.Unmarshal(resp, &response)
-		if err != nil {
-			return err
-		}
+	var response CertificateListResponse
+	err = json.Unmarshal(resp, &response)
+	if err != nil {
+		return err
+	}
 
-		for _, v := range response.Result {
-			var cert = v
-			_, ok := certsList[cert["name"].(string)]
-			// add certificate to the cert_list if not already there
-			// and skipping those that do not match the cert_basename
-			if !ok {
-				var name string = cert["name"].(string)
-				idValue := cert["id"].(float64)
-				id := int64(idValue)
-				// only add certs that match the Cert_basename to the list
-				if strings.HasPrefix(name, cfg.CertBasename) {
-					certsList[name] = id
-					if cfg.Debug {
-						log.Printf("certificate name: %v, is: %d", cert["name"], id)
-					}
+	// range over the list obtained from the server and build up a local
+	// certificate list
+	for _, v := range response.Result {
+		var cert = v
+		_, ok := certsList[cert["name"].(string)]
+		// add certificate to the certificate list if not already there
+		// and skipping those that do not match the certificate basename
+		if !ok {
+			var name string = cert["name"].(string)
+			idValue := cert["id"].(float64)
+			id := int64(idValue)
+			// only add certs that match the Cert_basename to the list
+			if strings.HasPrefix(name, cfg.CertBasename) {
+				certsList[name] = id
+				if cfg.Debug {
+					log.Printf("certificate name: %v, id: %d", cert["name"], id)
 				}
 			}
-			if id, ok := certsList[certName]; ok == true {
-				log.Printf("found new certificate: %v, id: %d", cert["name"], id)
-				inlist = true
-			}
 		}
-		time.Sleep(1 * time.Second)
+		if id, ok := certsList[certName]; ok == true {
+			log.Printf("found new certificate, %v, id: %d", cert["name"], id)
+			inlist = true
+		}
 	}
 
 	if !inlist {
-		return fmt.Errorf("search timeout, certificate %s was not deployed", certName)
+		return fmt.Errorf("certificate search failed, certificate %s was not deployed", certName)
 	} else {
 		log.Printf("certificate %s deployed successfully", certName)
 	}
@@ -195,7 +209,7 @@ func InstallCertificate(cfg *config.Config) error {
 	var serverURL = fmt.Sprintf("%s://%s:%d/%s", cfg.Protocol, cfg.ConnectHost, cfg.Port, endpoint)
 	var certName = cfg.CertBasename + strftime.Format("-%Y-%m-%d-%s", time.Now())
 
-	//
+	// connect to the server websocket endpoint
 	client, certName, err := NewClient(serverURL, cfg)
 	if cfg.Debug {
 		log.Println("client is Type:", reflect.TypeOf(client))
@@ -204,7 +218,7 @@ func InstallCertificate(cfg *config.Config) error {
 	defer client.Close()
 
 	if err != nil {
-		return fmt.Errorf("NewClient() error: %v", err)
+		return fmt.Errorf("failed to connet to the server, %v", err)
 	}
 	// login
 	err = clientLogin(client, cfg)
@@ -217,6 +231,7 @@ func InstallCertificate(cfg *config.Config) error {
 		return err
 	}
 
+	// load the certificates list
 	err = loadCertificateList(client, certName, cfg)
 	if err != nil {
 		return err
@@ -243,7 +258,7 @@ func InstallCertificate(cfg *config.Config) error {
 			arg := []int64{v}
 			_, err := client.Call("certificate.delete", 10, arg)
 			if err != nil {
-				return fmt.Errorf("certificate.delete of certificate, %v failed", err)
+				return fmt.Errorf("certificate deletion failed, %v", err)
 			} else {
 				log.Printf("certficate %v was deleted", k)
 			}
