@@ -13,8 +13,9 @@ tnascert-deploy [-h] [-c value] section_name<br>
 #### DESCRIPTION
 
 A tool used to import a TLS certificate and private key into a TrueNAS
-SCALE host.  Once imported, the tool may be configred to activate the
-TrueNAS host to use it as the main UI TLS certificate.  
+SCALE host running ***TrueNAS 25.04*** or later.  Once imported, the tool 
+may be configred to activate the TrueNAS host to use it as the main UI 
+TLS certificate.  
 
 The <b>tnas-cert.ini</b> file consists of multiple <b>sections</b> 
 The optional command line argument <b>section_name</b> may by
@@ -32,9 +33,10 @@ See the sample **tnas-cert.ini** file.
 
 tnas-cert.ini<br>
 
-#### BUILD NOTES
+#### NOTES
 
-This tool uses the TrueNAS Scale JSON-RPC 2.0 API and the TrueNAS client API module.
+This tool uses the TrueNAS Scale JSON-RPC 2.0 API and the TrueNAS client API module.  
+Supports versions of ***TrueNAS 25.04*** or later
 
 Clone this repository and build the tool using ***go build***
 
