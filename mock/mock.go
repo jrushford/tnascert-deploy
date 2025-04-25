@@ -46,14 +46,45 @@ func NewClient(serverURL string, TlsSkipVerify bool) (*Client, error) {
 }
 
 func (c *Client) Call(method string, timeout int64, params interface{}) (json.RawMessage, error) {
-	if method == "certificate.create" {
+	if method == "app.config" {
+		var resp json.RawMessage
+		data := map[string]interface{}{
+			"jsonrpc": "2.0",
+			"id":      1,
+			"result": map[string]interface{}{"ix_certificates": map[string]interface{}{
+				"testcert": 100,
+			}, "network": map[string]interface{}{}},
+		}
+		res, err := json.Marshal(data)
+		if err != nil {
+			return nil, fmt.Errorf("mock.Call(): Error marshalling response: %v", err)
+		} else {
+			resp = json.RawMessage(res)
+			return resp, nil
+		}
+	} else if method == "app.query" {
+		var resp json.RawMessage
+		m := []map[string]interface{}{{"name": "testapp", "id": "testapp"}}
+		data := map[string]interface{}{
+			"jsonrpc": "2.0",
+			"id":      1,
+			"result":  m,
+		}
+		res, err := json.Marshal(data)
+		if err != nil {
+			return nil, fmt.Errorf("mock.Call(): Error marshalling response: %v", err)
+		} else {
+			resp = json.RawMessage(res)
+			return resp, nil
+		}
+	} else if method == "certificate.create" {
+		var resp json.RawMessage
 		data := map[string]interface{}{
 			"jsonrpc": "2.0",
 			"id":      1,
 			"result":  100,
 		}
 		res, err := json.Marshal(data)
-		var resp json.RawMessage
 		if err != nil {
 			return nil, fmt.Errorf("mock.Call(): Error marshalling response: %v", err)
 		} else {
@@ -82,12 +113,12 @@ func (c *Client) Call(method string, timeout int64, params interface{}) (json.Ra
 			return resp, nil
 		}
 	} else if method == "ftp.update" {
-                result := map[string]interface{} {
+		result := map[string]interface{}{
 			"testresult": "ok",
 		}
 		args := map[string]interface{}{
-          		"jsonrpc": "2.0",
-			"id":	   1,
+			"jsonrpc": "2.0",
+			"id":      1,
 			"result":  result,
 		}
 		res, err := json.Marshal(args)

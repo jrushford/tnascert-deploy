@@ -23,13 +23,14 @@ import (
 )
 
 const (
-	WS                     = "ws"
-	WSS                    = "wss"
-	Config_file            = "tnas-cert.ini"
-	Default_base_cert_name = "tnas-cert-deploy"
-	Default_section        = "default"
-	Default_port           = 443
-	Default_protocol       = WSS
+	WS                      = "ws"
+	WSS                     = "wss"
+	Config_file             = "tnas-cert.ini"
+	Default_base_cert_name  = "tnas-cert-deploy"
+	Default_section         = "default"
+	Default_port            = 443
+	Default_protocol        = WSS
+	Default_timeout_seconds = 10
 )
 
 type Config struct {
@@ -44,7 +45,9 @@ type Config struct {
 	TlsSkipVerify       bool   `ini:"tls_skip_verify"`        // strict SSL cert verification of the endpoint
 	AddAsUiCertificate  bool   `ini:"add_as_ui_certificate"`  // Install as the active UI certificate if true
 	AddAsFTPCertificate bool   `ini:"add_as_ftp_certificate"` // Install as the active FTP service certificate if true
+	AddAsAppCertificate bool   `ini:"add_as_app_certificate"` // Install as the active APP service certificate if true
 	Environment         string `ini:"environment"`            // environment is either 'production' or 'test'
+	TimeoutSeconds	    int64  `ini:"timeoutSeconds"`	  // the number of seconds after which the truenas client calls fail
 	Debug               bool   `ini:"debug"`                  // debug logging if true
 }
 
@@ -110,6 +113,9 @@ func (c *Config) checkConfig() error {
 	}
 	if c.Private_key_path == "" {
 		return fmt.Errorf("private_key_path is not defined")
+	}
+	if c.TimeoutSeconds <= 0 {
+		c.TimeoutSeconds = Default_timeout_seconds
 	}
 
 	return nil

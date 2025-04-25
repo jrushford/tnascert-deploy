@@ -19,6 +19,7 @@ package deploy
 
 import (
 	"fmt"
+	"log"
 	"testing"
 	"tnascert-deploy/config"
 )
@@ -46,9 +47,39 @@ func TestDeployPkg(t *testing.T) {
 		t.Errorf("create certificate failed with error: %v", err)
 	}
 
-	err = loadCertificateList(client, certName, cfg)
+	err = loadCertificateList(client, cfg, certName)
 	if err != nil {
 		t.Errorf("load certificate list failed with error: %v", err)
+	}
+
+	result, err := addAsAppCertificate(client, cfg, "")
+	if err == nil && result != false {
+		t.Errorf("expected failure due to an empty certName")
+	}
+	log.Printf("certname: %v", certName)
+	result, err = addAsAppCertificate(client, cfg, certName)
+	if err != nil && result != true {
+		t.Errorf("addAsAppCertificate failed with error: %v", err)
+	}
+
+	result, err = addAsFTPCertificate(client, cfg, "")
+	if err == nil && result != false {
+		t.Errorf("expected failure due to an empty certName")
+	}
+
+	result, err = addAsFTPCertificate(client, cfg, certName)
+	if err != nil && result != true {
+		t.Errorf("addAsFTPCertificate failed with error: %v", err)
+	}
+
+	result, err = addAsUICertificate(client, cfg, "")
+	if err == nil && result != false {
+		t.Errorf("expected failure due to an empty certName")
+	}
+
+	result, err = addAsUICertificate(client, cfg, certName)
+	if err != nil && result != true {
+		t.Errorf("addAsUICertificate failed with error: %v", err)
 	}
 
 	err = InstallCertificate(cfg)
