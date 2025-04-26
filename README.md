@@ -31,7 +31,27 @@ See the sample **tnas-cert.ini** file.
 
 #### FILES
 
-tnas-cert.ini<br>
+The default configuration file is named ***tnas-cert.ini*** in the current working
+directory.  You may use the command line switch to use another file name and full
+path to the config file.
+
+#### CONFIG FILE SETTINGS
+
+    + api_key                string  - TrueNAS 64 byte API Key
+    + cert_basename          string  - basename for cert naming in TrueNAS
+    + connect_host           string  - TrueNAS hostname
+    + delete_old_certs       bool    - whether to remove old certificates
+    + full_chain_path        string  - path to full_chain.pem
+    + port                   uint64  - TrueNAS API endpoint port
+    + protocol               string  - websocket protocol 'ws' or 'wss' wss' is default
+    + private_key_path       string  - path to private_key.pem
+    + tls_skip_verify        bool    - strict SSL cert verification of the endpoint
+    + add_as_ui_certificate  bool    - install as the active UI certificate if true
+    + add_as_ftp_certificate bool    - install as the active FTP service certificate if true
+    + add_as_app_certificate bool    - install as the active APP service certificate if true
+    + environment            string  - environment is either 'production' or 'test'
+    + timeoutSeconds         int64   - the number of seconds after which the truenas client calls fail
+    + debug                  bool    - debug logging if true
 
 #### NOTES
 
