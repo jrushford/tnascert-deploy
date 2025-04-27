@@ -142,17 +142,36 @@ func jobRunner(job *truenas_api.Job) {
 }
 
 func (c *Client) CallWithJob(method string, params interface{}, callback func(progress float64, state string, desc string)) (*truenas_api.Job, error) {
-	job := &truenas_api.Job{
-		ID:         100,
-		Method:     "certificate.create",
-		State:      "PENDING",
-		ProgressCh: make(chan float64),
-		DoneCh:     make(chan string),
+	var job truenas_api.Job
+	if method == "app.update" {
+		job = truenas_api.Job{
+			ID:         100,
+			Method:     "app.update",
+			State:      "PENDING",
+			ProgressCh: make(chan float64),
+			DoneCh:     make(chan string),
+		}
+	} else if method == "certificate.create" {
+		job = truenas_api.Job{
+			ID:         101,
+			Method:     "certificate.create",
+			State:      "PENDING",
+			ProgressCh: make(chan float64),
+			DoneCh:     make(chan string),
+		}
+	} else if method == "certificate.delete" {
+		job = truenas_api.Job{
+			ID:         101,
+			Method:     "certificate.create",
+			State:      "PENDING",
+			ProgressCh: make(chan float64),
+			DoneCh:     make(chan string),
+		}
 	}
 
-	go jobRunner(job)
+	go jobRunner(&job)
 
-	return job, nil
+	return &job, nil
 }
 
 func (c *Client) Close() error {

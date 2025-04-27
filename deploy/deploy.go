@@ -275,6 +275,48 @@ func createCertificate(client Client, certName string, cfg *config.Config) error
 	return nil
 }
 
+func deleteCertificates(client Client, cfg *config.Config, certName string) error {
+	if certName == "" {
+		return fmt.Errorf("certName is empty")
+	}
+	_, ok := certsList[certName]
+	if !ok {
+		return fmt.Errorf("certificate %s not found in the certificates list", certName)
+	}
+
+	for k, v := range certsList {
+		if strings.Compare(k, certName) == 0 {
+			log.Printf("skipping deletion of certificate %v", k)
+			continue
+		}
+
+		arg := []int64{v}
+		job, err := client.CallWithJob("certificate.delete", arg, func(progress float64, state string, desc string) {
+			log.Printf("Job Progress: %.2f%%, State: %s, Description: %s", progress, state, desc)
+		})
+		if err != nil {
+			return fmt.Errorf("certificate deletion failed, %v", err)
+		}
+
+		log.Printf("deleting old certificate %v, with job ID: %d", k, job.ID)
+
+		// Monitor the progress of the job.
+		for !job.Finished {
+			select {
+			case progress := <-job.ProgressCh:
+				log.Printf("Job progress: %.2f%%", progress)
+			case err := <-job.DoneCh:
+				if err != "" {
+					return fmt.Errorf("Job failed: %v", err)
+				} else {
+					log.Printf("Job completed successfully, certificate %v was deleted", k)
+				}
+			}
+		}
+	}
+	return nil
+}
+
 // poll and save all deployed certificates matching our Cert_basename
 // including the newly created certificate
 func loadCertificateList(client Client, cfg *config.Config, certName string) error {
@@ -338,7 +380,7 @@ func InstallCertificate(cfg *config.Config) error {
 	// connect to the server websocket endpoint
 	client, certName, err := NewClient(serverURL, cfg)
 	if err != nil {
-		return fmt.Errorf("failed to connet to the server, %v", err)
+		return fmt.Errorf("failed to connect to the server, %v", err)
 	}
 	defer client.Close()
 
@@ -394,18 +436,9 @@ func InstallCertificate(cfg *config.Config) error {
 	if activated {
 		// if configured to do so, delete old certificates matching the cert basename pattern
 		if cfg.DeleteOldCerts {
-			for k, v := range certsList {
-				if strings.Compare(k, certName) == 0 {
-					log.Printf("skipping deletion of certificate %v", k)
-					continue
-				}
-				arg := []int64{v}
-				_, err := client.Call("certificate.delete", cfg.TimeoutSeconds, arg)
-				if err != nil {
-					return fmt.Errorf("certificate deletion failed, %v", err)
-				} else {
-					log.Printf("certficate %v, id: %v was deleted", k, v)
-				}
+			err = deleteCertificates(client, cfg, certName)
+			if err != nil {
+				log.Printf("certificate deletion failed, %v", err)
 			}
 		}
 		// restart the UI
