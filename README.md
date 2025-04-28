@@ -55,8 +55,12 @@ path to the config file.
 
 #### NOTES
 
-This tool uses the TrueNAS Scale JSON-RPC 2.0 API and the TrueNAS client API module.  
-Supports versions of ***TrueNAS 25.04*** or later
+This tool uses the TrueNAS Scale JSON-RPC 2.0 API and the TrueNAS client API module. Supports versions of ***TrueNAS 25.04*** or later
+
+See Also:  
++ [TrueNAS api_client_golang](https://github.com/truenas/api_client_golang)
++ [TrueNAS websocket API documentaion](https://www.truenas.com/docs/api/scale_websocket_api.html)
+
 
 Clone this repository and build the tool using ***go build***
 
