@@ -55,7 +55,7 @@ type CertificateListResponse struct {
 const endpoint = "api/current"
 
 // certificate list obtained from TrueNAS client or the mock client
-var certsList map[string]int64 = map[string]int64{}
+var certsList = map[string]int64{}
 
 // Client interface
 type Client interface {
@@ -66,7 +66,8 @@ type Client interface {
 	SubscribeToJobs() error
 }
 
-// uses the configuration 'Environment' setting to get either a truenas_api.Client or a mock.Client used for testing.
+// NewClient uses the configuration 'Environment' setting to get either a truenas_api.Client or a
+// mock.Client used for testing.
 func NewClient(serverURL string, cfg *config.Config) (Client, string, error) {
 
 	if cfg.Environment == "production" {
@@ -151,7 +152,7 @@ func addAsAppCertificate(client Client, cfg *config.Config, certName string) (bo
 					log.Printf("Job progress: %.2f%%", progress)
 				case err := <-job.DoneCh:
 					if err != "" {
-						return false, fmt.Errorf("Job failed: %v", err)
+						return false, fmt.Errorf("job failed: %v", err)
 					} else {
 						log.Println("Job completed successfully!")
 					}
@@ -265,7 +266,7 @@ func createCertificate(client Client, certName string, cfg *config.Config) error
 			log.Printf("Job progress: %.2f%%", progress)
 		case err := <-job.DoneCh:
 			if err != "" {
-				return fmt.Errorf("Job failed: %v", err)
+				return fmt.Errorf("job failed: %v", err)
 			} else {
 				log.Println("Job completed successfully!")
 			}
@@ -297,7 +298,9 @@ func deleteCertificates(client Client, cfg *config.Config, certName string) erro
 		if err != nil {
 			return fmt.Errorf("certificate deletion failed, %v", err)
 		}
-
+		if cfg.Debug {
+			log.Printf("deleting old certificate, job info: %v, ", job)
+		}
 		log.Printf("deleting old certificate %v, with job ID: %d", k, job.ID)
 
 		// Monitor the progress of the job.
@@ -307,9 +310,9 @@ func deleteCertificates(client Client, cfg *config.Config, certName string) erro
 				log.Printf("Job progress: %.2f%%", progress)
 			case err := <-job.DoneCh:
 				if err != "" {
-					return fmt.Errorf("Job failed: %v", err)
+					return fmt.Errorf("job failed: %v", err)
 				} else {
-					log.Printf("Job completed successfully, certificate %v was deleted", k)
+					log.Printf("job completed successfully, certificate %v was deleted", k)
 				}
 			}
 		}
@@ -320,7 +323,7 @@ func deleteCertificates(client Client, cfg *config.Config, certName string) erro
 // poll and save all deployed certificates matching our Cert_basename
 // including the newly created certificate
 func loadCertificateList(client Client, cfg *config.Config, certName string) error {
-	var inlist bool = false
+	var inlist = false
 	if certName == "" {
 		return fmt.Errorf("certName is empty")
 	}
@@ -347,7 +350,7 @@ func loadCertificateList(client Client, cfg *config.Config, certName string) err
 		// add certificate to the certificate list if not already there
 		// and skipping those that do not match the certificate basename
 		if !ok {
-			var name string = cert["name"].(string)
+			var name = cert["name"].(string)
 			idValue := cert["id"].(float64)
 			id := int64(idValue)
 			// only add certs that match the Cert_basename to the list
@@ -382,7 +385,12 @@ func InstallCertificate(cfg *config.Config) error {
 	if err != nil {
 		return fmt.Errorf("failed to connect to the server, %v", err)
 	}
-	defer client.Close()
+	defer func(client Client) {
+		err := client.Close()
+		if err != nil {
+			log.Printf("failed to close the client connection, %v", err)
+		}
+	}(client)
 
 	if cfg.Debug {
 		log.Println("client is Type:", reflect.TypeOf(client))
@@ -400,7 +408,7 @@ func InstallCertificate(cfg *config.Config) error {
 		return err
 	}
 
-	// load the certificates list
+	// load the certificate list
 	err = loadCertificateList(client, cfg, certName)
 	if err != nil {
 		return err
