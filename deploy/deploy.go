@@ -92,37 +92,37 @@ func NewClient(serverURL string, cfg *config.Config) (Client, string, error) {
 	return nil, "", fmt.Errorf("invalid environment")
 }
 
-func addAsAppCertificate(client Client, cfg *config.Config, certName string) (bool, error) {
+func addAsAppCertificate(client Client, cfg *config.Config, certName string) error {
 	if certName == "" {
-		return false, fmt.Errorf("certName is empty")
+		return fmt.Errorf("certName is empty")
 	}
 	ID, ok := certsList[certName]
 	if !ok {
-		return false, fmt.Errorf("certificate %s not found in the certificates list", certName)
+		return fmt.Errorf("certificate %s not found in the certificates list", certName)
 	}
 	args := []interface{}{}
 	var response AppListQueryResponse
 	resp, err := client.Call("app.query", cfg.TimeoutSeconds, args)
 	if err != nil {
-		return false, fmt.Errorf("app query failed, %v", err)
+		return fmt.Errorf("app query failed, %v", err)
 	}
 	if cfg.Debug {
 		log.Printf("app query response: %v", string(resp))
 	}
 	err = json.Unmarshal(resp, &response)
 	if err != nil {
-		return false, fmt.Errorf("app query failed, %v, ", err)
+		return fmt.Errorf("app query failed, %v, ", err)
 	}
 	for _, app := range response.Result {
 		var response AppConfigResponse
 		args := []interface{}{app["id"]}
 		appConfig, err := client.Call("app.config", cfg.TimeoutSeconds, args)
 		if err != nil {
-			return false, fmt.Errorf("app config query failed, %v", err)
+			return fmt.Errorf("app config query failed, %v", err)
 		}
 		err = json.Unmarshal(appConfig, &response)
 		if err != nil {
-			return false, fmt.Errorf("app config query failed, %v", err)
+			return fmt.Errorf("app config query failed, %v", err)
 		}
 		if len(response.Result.IxCertificates) != 0 {
 			var params []interface{}
@@ -141,7 +141,7 @@ func addAsAppCertificate(client Client, cfg *config.Config, certName string) (bo
 				log.Printf("Job Progress: %.2f%%, State: %s, Description: %s", progress, state, desc)
 			})
 			if err != nil {
-				return false, fmt.Errorf("failed to update app certificate, %v", err)
+				return fmt.Errorf("failed to update app certificate, %v", err)
 			}
 			log.Printf("started the app update job with ID: %d", job.ID)
 
@@ -152,7 +152,7 @@ func addAsAppCertificate(client Client, cfg *config.Config, certName string) (bo
 					log.Printf("Job progress: %.2f%%", progress)
 				case err := <-job.DoneCh:
 					if err != "" {
-						return false, fmt.Errorf("job failed: %v", err)
+						return fmt.Errorf("job failed: %v", err)
 					} else {
 						log.Println("Job completed successfully!")
 					}
@@ -161,20 +161,18 @@ func addAsAppCertificate(client Client, cfg *config.Config, certName string) (bo
 
 			log.Printf("updated the certificate for app: %s to use: %s, id: %v", app["name"], certName,
 				certsList[certName])
-		} else {
-			log.Printf("IxCertificates is empty")
 		}
 	}
-	return true, nil
+	return nil
 }
 
-func addAsFTPCertificate(client Client, cfg *config.Config, certName string) (bool, error) {
+func addAsFTPCertificate(client Client, cfg *config.Config, certName string) error {
 	if certName == "" {
-		return false, fmt.Errorf("certName is empty")
+		return fmt.Errorf("certName is empty")
 	}
 	ID, ok := certsList[certName]
 	if !ok {
-		return false, fmt.Errorf("certificate %s not found in the certificates list", certName)
+		return fmt.Errorf("certificate %s not found in the certificates list", certName)
 	}
 	pmap := map[string]int64{
 		"ssltls_certificate": ID,
@@ -182,9 +180,12 @@ func addAsFTPCertificate(client Client, cfg *config.Config, certName string) (bo
 	args := []interface{}{pmap}
 	_, err := client.Call("ftp.update", cfg.TimeoutSeconds, args)
 	if err != nil {
-		return false, fmt.Errorf("updating the FTP service certificate failed, %v", err)
+		return fmt.Errorf("updating the FTP service certificate failed, %v", err)
+	} else {
+		log.Printf("the FTP service certificate updated successfully to %s", certName)
 	}
-	return true, nil
+
+	return nil
 }
 
 func addAsUICertificate(client Client, cfg *config.Config, certName string) (bool, error) {
@@ -287,7 +288,9 @@ func deleteCertificates(client Client, cfg *config.Config, certName string) erro
 
 	for k, v := range certsList {
 		if strings.Compare(k, certName) == 0 {
-			log.Printf("skipping deletion of certificate %v", k)
+			if cfg.Debug {
+				log.Printf("skipping deletion of certificate %v", k)
+			}
 			continue
 		}
 
@@ -422,22 +425,16 @@ func InstallCertificate(cfg *config.Config) error {
 	}
 
 	if cfg.AddAsFTPCertificate {
-		result, err := addAsFTPCertificate(client, cfg, certName)
+		err := addAsFTPCertificate(client, cfg, certName)
 		if err != nil {
 			return err
-		}
-		if result {
-			log.Printf("%s is now the active FTP service certificate", certName)
 		}
 	}
 
 	if cfg.AddAsAppCertificate {
-		result, err := addAsAppCertificate(client, cfg, certName)
+		err := addAsAppCertificate(client, cfg, certName)
 		if err != nil {
 			return err
-		}
-		if result {
-			log.Printf("%s is now the active App(s) certificate", certName)
 		}
 	}
 

@@ -52,27 +52,27 @@ func TestDeployPkg(t *testing.T) {
 		t.Errorf("load certificate list failed with error: %v", err)
 	}
 
-	result, err := addAsAppCertificate(client, cfg, "")
-	if err == nil && result != false {
+	err = addAsAppCertificate(client, cfg, "")
+	if err == nil {
 		t.Errorf("expected failure due to an empty certName")
 	}
 	log.Printf("certname: %v", certName)
-	result, err = addAsAppCertificate(client, cfg, certName)
-	if err != nil && result != true {
+	err = addAsAppCertificate(client, cfg, certName)
+	if err != nil {
 		t.Errorf("addAsAppCertificate failed with error: %v", err)
 	}
 
-	result, err = addAsFTPCertificate(client, cfg, "")
-	if err == nil && result != false {
+	err = addAsFTPCertificate(client, cfg, "")
+	if err == nil {
 		t.Errorf("expected failure due to an empty certName")
 	}
 
-	result, err = addAsFTPCertificate(client, cfg, certName)
-	if err != nil && result != true {
+	err = addAsFTPCertificate(client, cfg, certName)
+	if err != nil {
 		t.Errorf("addAsFTPCertificate failed with error: %v", err)
 	}
 
-	result, err = addAsUICertificate(client, cfg, "")
+	result, err := addAsUICertificate(client, cfg, "")
 	if err == nil && result != false {
 		t.Errorf("expected failure due to an empty certName")
 	}
