@@ -19,7 +19,6 @@ package deploy
 
 import (
 	"fmt"
-	"log"
 	"testing"
 	"tnascert-deploy/config"
 )
@@ -31,8 +30,11 @@ func TestDeployPkg(t *testing.T) {
 	if cfg == nil || err != nil {
 		t.Errorf("New config failed with error: %v", err)
 	}
+	certName := cfg.CertName()
+	fmt.Printf("certName: %s\n", certName)
+
 	serverURL := fmt.Sprintf("%s://%s:%d/%s", cfg.Protocol, cfg.ConnectHost, cfg.Port, endpoint)
-	client, certName, err := NewClient(serverURL, cfg)
+	client, err := NewClient(serverURL, cfg)
 	if err != nil {
 		t.Errorf("New client failed with error: %v", err)
 	}
@@ -42,42 +44,22 @@ func TestDeployPkg(t *testing.T) {
 		t.Errorf("client login failed with error: %v", err)
 	}
 
-	err = createCertificate(client, certName, cfg)
+	err = createCertificate(client, cfg)
 	if err != nil {
 		t.Errorf("create certificate failed with error: %v", err)
 	}
 
-	err = loadCertificateList(client, cfg, certName)
+	err = loadCertificateList(client, cfg)
 	if err != nil {
 		t.Errorf("load certificate list failed with error: %v", err)
 	}
 
-	err = addAsAppCertificate(client, cfg, "")
-	if err == nil {
-		t.Errorf("expected failure due to an empty certName")
-	}
-	log.Printf("certname: %v", certName)
-	err = addAsAppCertificate(client, cfg, certName)
-	if err != nil {
-		t.Errorf("addAsAppCertificate failed with error: %v", err)
-	}
-
-	err = addAsFTPCertificate(client, cfg, "")
-	if err == nil {
-		t.Errorf("expected failure due to an empty certName")
-	}
-
-	err = addAsFTPCertificate(client, cfg, certName)
+	err = addAsFTPCertificate(client, cfg)
 	if err != nil {
 		t.Errorf("addAsFTPCertificate failed with error: %v", err)
 	}
 
-	result, err := addAsUICertificate(client, cfg, "")
-	if err == nil && result != false {
-		t.Errorf("expected failure due to an empty certName")
-	}
-
-	result, err = addAsUICertificate(client, cfg, certName)
+	result, err := addAsUICertificate(client, cfg)
 	if err != nil && result != true {
 		t.Errorf("addAsUICertificate failed with error: %v", err)
 	}

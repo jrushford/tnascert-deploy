@@ -20,13 +20,11 @@ package deploy
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/ncruces/go-strftime"
 	"github.com/truenas/api_client_golang/truenas_api"
 	"log"
 	"os"
 	"reflect"
 	"strings"
-	"time"
 	"tnascert-deploy/config"
 	"tnascert-deploy/mock"
 )
@@ -68,34 +66,25 @@ type Client interface {
 
 // NewClient uses the configuration 'Environment' setting to get either a truenas_api.Client or a
 // mock.Client used for testing.
-func NewClient(serverURL string, cfg *config.Config) (Client, string, error) {
-
+func NewClient(serverURL string, cfg *config.Config) (Client, error) {
 	if cfg.Environment == "production" {
 		log.Println("using the production environment")
-		certName := cfg.CertBasename + strftime.Format("-%Y-%m-%d-%s", time.Now())
-		client, err := truenas_api.NewClient(serverURL, cfg.TlsSkipVerify)
-		if err != nil {
-			return client, certName, fmt.Errorf("error connecting to the server, %v", err)
-		} else {
-			return client, certName, nil
-		}
+		return truenas_api.NewClient(serverURL, cfg.TlsSkipVerify)
 	} else if cfg.Environment == "test" {
 		log.Println("using test environment")
-		certName := mock.GetCertName(cfg)
 		client, err := mock.NewClient(serverURL, cfg.TlsSkipVerify)
 		if err != nil {
-			return client, certName, fmt.Errorf("NewClient(): %v", err)
+			return client, fmt.Errorf("NewClient(): %v", err)
 		} else {
-			return client, certName, nil
+			client.SetConfig(cfg)
+			return client, nil
 		}
 	}
-	return nil, "", fmt.Errorf("invalid environment")
+	return nil, fmt.Errorf("invalid environment")
 }
 
-func addAsAppCertificate(client Client, cfg *config.Config, certName string) error {
-	if certName == "" {
-		return fmt.Errorf("certName is empty")
-	}
+func addAsAppCertificate(client Client, cfg *config.Config) error {
+	var certName = cfg.CertName()
 	ID, ok := certsList[certName]
 	if !ok {
 		return fmt.Errorf("certificate %s not found in the certificates list", certName)
@@ -166,10 +155,8 @@ func addAsAppCertificate(client Client, cfg *config.Config, certName string) err
 	return nil
 }
 
-func addAsFTPCertificate(client Client, cfg *config.Config, certName string) error {
-	if certName == "" {
-		return fmt.Errorf("certName is empty")
-	}
+func addAsFTPCertificate(client Client, cfg *config.Config) error {
+	var certName = cfg.CertName()
 	ID, ok := certsList[certName]
 	if !ok {
 		return fmt.Errorf("certificate %s not found in the certificates list", certName)
@@ -188,10 +175,8 @@ func addAsFTPCertificate(client Client, cfg *config.Config, certName string) err
 	return nil
 }
 
-func addAsUICertificate(client Client, cfg *config.Config, certName string) (bool, error) {
-	if certName == "" {
-		return false, fmt.Errorf("certName is empty")
-	}
+func addAsUICertificate(client Client, cfg *config.Config) (bool, error) {
+	var certName = cfg.CertName()
 	ID, ok := certsList[certName]
 	if !ok {
 		return false, fmt.Errorf("certificate %s not found in the certificates list", certName)
@@ -223,10 +208,8 @@ func clientLogin(client Client, cfg *config.Config) error {
 }
 
 // deploy the certificate in TrueNAS
-func createCertificate(client Client, certName string, cfg *config.Config) error {
-	if certName == "" {
-		return fmt.Errorf("certName is empty")
-	}
+func createCertificate(client Client, cfg *config.Config) error {
+	var certName = cfg.CertName()
 	// read in the certificate data
 	certPem, err := os.ReadFile(cfg.FullChainPath)
 	if err != nil {
@@ -277,10 +260,8 @@ func createCertificate(client Client, certName string, cfg *config.Config) error
 	return nil
 }
 
-func deleteCertificates(client Client, cfg *config.Config, certName string) error {
-	if certName == "" {
-		return fmt.Errorf("certName is empty")
-	}
+func deleteCertificates(client Client, cfg *config.Config) error {
+	var certName = cfg.CertName()
 	_, ok := certsList[certName]
 	if !ok {
 		return fmt.Errorf("certificate %s not found in the certificates list", certName)
@@ -325,11 +306,9 @@ func deleteCertificates(client Client, cfg *config.Config, certName string) erro
 
 // poll and save all deployed certificates matching our Cert_basename
 // including the newly created certificate
-func loadCertificateList(client Client, cfg *config.Config, certName string) error {
+func loadCertificateList(client Client, cfg *config.Config) error {
 	var inlist = false
-	if certName == "" {
-		return fmt.Errorf("certName is empty")
-	}
+	var certName = cfg.CertName()
 	args := []interface{}{}
 	resp, err := client.Call("app.certificate_choices", cfg.TimeoutSeconds, args)
 	if err != nil {
@@ -380,11 +359,11 @@ func loadCertificateList(client Client, cfg *config.Config, certName string) err
 
 func InstallCertificate(cfg *config.Config) error {
 	var serverURL = fmt.Sprintf("%s://%s:%d/%s", cfg.Protocol, cfg.ConnectHost, cfg.Port, endpoint)
-	var certName = cfg.CertBasename + strftime.Format("-%Y-%m-%d-%s", time.Now())
+	var certName string = cfg.CertName()
 	var activated = false
 
 	// connect to the server websocket endpoint
-	client, certName, err := NewClient(serverURL, cfg)
+	client, err := NewClient(serverURL, cfg)
 	if err != nil {
 		return fmt.Errorf("failed to connect to the server, %v", err)
 	}
@@ -406,33 +385,33 @@ func InstallCertificate(cfg *config.Config) error {
 		return err
 	}
 	// deploy the certificate
-	err = createCertificate(client, certName, cfg)
+	err = createCertificate(client, cfg)
 	if err != nil {
 		return err
 	}
 
 	// load the certificate list
-	err = loadCertificateList(client, cfg, certName)
+	err = loadCertificateList(client, cfg)
 	if err != nil {
 		return err
 	}
 
 	if cfg.AddAsUiCertificate {
-		activated, err = addAsUICertificate(client, cfg, certName)
+		activated, err = addAsUICertificate(client, cfg)
 		if err != nil {
 			return err
 		}
 	}
 
 	if cfg.AddAsFTPCertificate {
-		err := addAsFTPCertificate(client, cfg, certName)
+		err := addAsFTPCertificate(client, cfg)
 		if err != nil {
 			return err
 		}
 	}
 
 	if cfg.AddAsAppCertificate {
-		err := addAsAppCertificate(client, cfg, certName)
+		err := addAsAppCertificate(client, cfg)
 		if err != nil {
 			return err
 		}
@@ -441,7 +420,7 @@ func InstallCertificate(cfg *config.Config) error {
 	if activated {
 		// if configured to do so, delete old certificates matching the cert basename pattern
 		if cfg.DeleteOldCerts {
-			err = deleteCertificates(client, cfg, certName)
+			err = deleteCertificates(client, cfg)
 			if err != nil {
 				log.Printf("certificate deletion failed, %v", err)
 			}

@@ -19,7 +19,9 @@ package config
 
 import (
 	"fmt"
+	"github.com/ncruces/go-strftime"
 	"gopkg.in/ini.v1"
+	"time"
 )
 
 const (
@@ -49,6 +51,7 @@ type Config struct {
 	Environment         string `ini:"environment"`            // environment is either 'production' or 'test'
 	TimeoutSeconds      int64  `ini:"timeoutSeconds"`         // the number of seconds after which the truenas client calls fail
 	Debug               bool   `ini:"debug"`                  // debug logging if true
+	certName            string // instance generated certificate name
 }
 
 func New(config_file string, section string) (*Config, error) {
@@ -78,6 +81,13 @@ func New(config_file string, section string) (*Config, error) {
 	}
 
 	return &c, nil
+}
+
+func (c *Config) CertName() string {
+	if c.certName == "" {
+		c.certName = c.CertBasename + strftime.Format("-%Y-%m-%d-%s", time.Now())
+	}
+	return c.certName
 }
 
 func (c *Config) checkConfig() error {

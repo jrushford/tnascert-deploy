@@ -31,12 +31,11 @@ import (
 	"tnascert-deploy/config"
 )
 
-const defaultCertName = "tnas-cert-deploy-2025-01-01-0101683628"
-
 // mock client for tests
 type Client struct {
 	url           string // WebSocket server URL
 	tlsSkipVerify bool   // WebSocket connection instance
+	cfg           *config.Config
 }
 
 func NewClient(serverURL string, TlsSkipVerify bool) (*Client, error) {
@@ -96,7 +95,7 @@ func (c *Client) Call(method string, timeout int64, params interface{}) (json.Ra
 		certs := []map[string]interface{}{
 			{"id": 1, "name": "truenas_default"},
 			{"id": 2, "name": "tnas-cert-deploy-2024-12-31-0801683628"},
-			{"id": 3, "name": defaultCertName},
+			{"id": 3, "name": c.cfg.CertName()},
 		}
 
 		var args map[string]interface{} = make(map[string]interface{})
@@ -185,8 +184,8 @@ func (c *Client) Login(username string, password string, apiKey string) error {
 	return errors.New("mock.Client Login: invalid api key")
 }
 
-func GetCertName(cfg *config.Config) string {
-	return defaultCertName
+func (c *Client) SetConfig(cfg *config.Config) {
+	c.cfg = cfg
 }
 
 func (c *Client) SubscribeToJobs() error {
