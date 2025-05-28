@@ -9,6 +9,7 @@ tnascert-deploy [-h] [-c value] section_name<br>
 
  -c, --config="full path to tnas-cert.ini file"<br>
  -h, --help<br>
+ -v, --version<br>
 
 #### DESCRIPTION
 

@@ -6,7 +6,7 @@ import (
 	"tnascert-deploy/config"
 )
 
-func TestConfig(t *testing.T) {
+func TestMainPackage(t *testing.T) {
 	configFile := "test_files/tnas-cert.ini"
 
 	cfg, err := config.New(configFile, "default")

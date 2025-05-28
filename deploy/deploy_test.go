@@ -33,7 +33,7 @@ func TestDeployPkg(t *testing.T) {
 	certName := cfg.CertName()
 	fmt.Printf("certName: %s\n", certName)
 
-	serverURL := fmt.Sprintf("%s://%s:%d/%s", cfg.Protocol, cfg.ConnectHost, cfg.Port, Endpoint)
+	serverURL := cfg.ServerURL()
 	client, err := NewClient(serverURL, cfg.TlsSkipVerify)
 	if err != nil {
 		t.Errorf("New client failed with error: %v", err)

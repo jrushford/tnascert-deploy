@@ -33,6 +33,7 @@ const (
 	Default_port            = 443
 	Default_protocol        = WSS
 	Default_timeout_seconds = 10
+	endpoint                = "api/current"
 )
 
 type Config struct {
@@ -51,6 +52,7 @@ type Config struct {
 	TimeoutSeconds      int64  `ini:"timeoutSeconds"`         // the number of seconds after which the truenas client calls fail
 	Debug               bool   `ini:"debug"`                  // debug logging if true
 	certName            string // instance generated certificate name
+	serverURL           string // instance generated server URL
 }
 
 func New(config_file string, section string) (*Config, error) {
@@ -87,6 +89,13 @@ func (c *Config) CertName() string {
 		c.certName = c.CertBasename + strftime.Format("-%Y-%m-%d-%s", time.Now())
 	}
 	return c.certName
+}
+
+func (c *Config) ServerURL() string {
+	if c.serverURL == "" {
+		c.serverURL = fmt.Sprintf("%s://%s:%d/%s", c.Protocol, c.ConnectHost, c.Port, endpoint)
+	}
+	return c.serverURL
 }
 
 func (c *Config) checkConfig() error {

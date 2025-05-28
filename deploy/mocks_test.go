@@ -16,8 +16,7 @@
  */
 
 /*
- *  This package is strictly for unit testing.  It is a mock client used to test the
- *  deploy package
+ * Unit tests mock client for the deploy package.
  */
 
 package deploy

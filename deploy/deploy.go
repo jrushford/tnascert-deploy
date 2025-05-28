@@ -49,8 +49,6 @@ type CertificateListResponse struct {
 	Result  []map[string]interface{} `json:"result"`
 }
 
-const Endpoint = "api/current"
-
 // certificate list obtained from TrueNAS client or the mock client
 var certsList = map[string]int64{}
 

@@ -25,9 +25,12 @@ import (
 	"github.com/truenas/api_client_golang/truenas_api"
 	"log"
 	"os"
+	"runtime/debug"
 	"tnascert-deploy/config"
 	"tnascert-deploy/deploy"
 )
+
+const release = "1.2"
 
 // simple verification of the certificate and private key, can they be loaded and parsed
 func verifyCertificateKeyPair(cert_path string, key_path string) error {
@@ -48,12 +51,23 @@ func main() {
 	// parse out command line options
 	configFile := getopt.StringLong("config", 'c', config.Config_file, "full path to the configuration file")
 	help := getopt.BoolLong("help", 'h', "print usage information and exit")
+	version := getopt.BoolLong("version", 'v', "print version information and exit")
 	getopt.SetParameters("ini_section_name")
 
 	getopt.Parse()
 	if *help == true {
 		getopt.PrintUsage(os.Stdout)
 		os.Exit(0)
+	}
+	if *version == true {
+		if info, ok := debug.ReadBuildInfo(); ok {
+			for _, setting := range info.Settings {
+				if setting.Key == "vcs.revision" {
+					fmt.Printf("\nRelease: %s\nGit Revision: %s\n\n", release, setting.Value)
+					os.Exit(0)
+				}
+			}
+		}
 	}
 	args := getopt.Args()
 	if len(args) > 0 {
@@ -74,7 +88,7 @@ func main() {
 		log.Println("verified the certificate key pair")
 	}
 
-	serverURL := fmt.Sprintf("%s://%s:%d/%s", cfg.Protocol, cfg.ConnectHost, cfg.Port, deploy.Endpoint)
+	serverURL := cfg.ServerURL()
 	client, err := truenas_api.NewClient(serverURL, cfg.TlsSkipVerify)
 	if err != nil {
 		log.Println("error creating the client,", err)
