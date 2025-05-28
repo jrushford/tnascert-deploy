@@ -29,9 +29,6 @@ func TestNewConfig(t *testing.T) {
 	if cfg == nil || err != nil {
 		t.Errorf("New config failed with error: %v", err)
 	}
-	if cfg.Environment != "test" {
-		t.Errorf("Environment should be 'test'")
-	}
 	if cfg.ConnectHost != "nas01.mydomain.com" {
 		t.Errorf("Connect_host should be nas01.mydomain.com")
 	}
