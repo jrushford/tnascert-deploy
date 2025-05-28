@@ -34,10 +34,11 @@ func TestDeployPkg(t *testing.T) {
 	fmt.Printf("certName: %s\n", certName)
 
 	serverURL := fmt.Sprintf("%s://%s:%d/%s", cfg.Protocol, cfg.ConnectHost, cfg.Port, endpoint)
-	client, err := NewClient(serverURL, cfg)
+	client, err := NewClient(serverURL, cfg.TlsSkipVerify)
 	if err != nil {
 		t.Errorf("New client failed with error: %v", err)
 	}
+	client.SetConfig(cfg)
 
 	err = clientLogin(client, cfg)
 	if err != nil {
@@ -64,7 +65,17 @@ func TestDeployPkg(t *testing.T) {
 		t.Errorf("addAsUICertificate failed with error: %v", err)
 	}
 
-	err = InstallCertificate(cfg)
+	err = addAsAppCertificate(client, cfg)
+	if err != nil {
+		t.Errorf("addAsAppCertificate failed with error: %v", err)
+	}
+
+	err = deleteCertificates(client, cfg)
+	if err != nil {
+		t.Errorf("delete certificates failed with error: %v", err)
+	}
+
+	err = InstallCertificate(client, cfg)
 	if err != nil {
 		t.Errorf("install certificate failed with error: %v", err)
 	}

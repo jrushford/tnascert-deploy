@@ -26,7 +26,6 @@ import (
 	"reflect"
 	"strings"
 	"tnascert-deploy/config"
-	"tnascert-deploy/mock"
 )
 
 type AppConfigResponse struct {
@@ -62,25 +61,6 @@ type Client interface {
 	CallWithJob(method string, params interface{}, callback func(progress float64, state string, desc string)) (*truenas_api.Job, error)
 	Close() error
 	SubscribeToJobs() error
-}
-
-// NewClient uses the configuration 'Environment' setting to get either a truenas_api.Client or a
-// mock.Client used for testing.
-func NewClient(serverURL string, cfg *config.Config) (Client, error) {
-	if cfg.Environment == "production" {
-		log.Println("using the production environment")
-		return truenas_api.NewClient(serverURL, cfg.TlsSkipVerify)
-	} else if cfg.Environment == "test" {
-		log.Println("using test environment")
-		client, err := mock.NewClient(serverURL, cfg.TlsSkipVerify)
-		if err != nil {
-			return client, fmt.Errorf("NewClient(): %v", err)
-		} else {
-			client.SetConfig(cfg)
-			return client, nil
-		}
-	}
-	return nil, fmt.Errorf("invalid environment")
 }
 
 func addAsAppCertificate(client Client, cfg *config.Config) error {
@@ -357,22 +337,9 @@ func loadCertificateList(client Client, cfg *config.Config) error {
 	return nil
 }
 
-func InstallCertificate(cfg *config.Config) error {
-	var serverURL = fmt.Sprintf("%s://%s:%d/%s", cfg.Protocol, cfg.ConnectHost, cfg.Port, endpoint)
+func InstallCertificate(client Client, cfg *config.Config) error {
 	var certName string = cfg.CertName()
 	var activated = false
-
-	// connect to the server websocket endpoint
-	client, err := NewClient(serverURL, cfg)
-	if err != nil {
-		return fmt.Errorf("failed to connect to the server, %v", err)
-	}
-	defer func(client Client) {
-		err := client.Close()
-		if err != nil {
-			log.Printf("failed to close the client connection, %v", err)
-		}
-	}(client)
 
 	if cfg.Debug {
 		log.Println("client is Type:", reflect.TypeOf(client))
@@ -380,7 +347,7 @@ func InstallCertificate(cfg *config.Config) error {
 	log.Printf("installing certificate: %s", certName)
 
 	// login
-	err = clientLogin(client, cfg)
+	err := clientLogin(client, cfg)
 	if err != nil {
 		return err
 	}

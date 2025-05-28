@@ -20,7 +20,7 @@
  *  deploy package
  */
 
-package mock
+package deploy
 
 import (
 	"encoding/json"
@@ -32,19 +32,19 @@ import (
 )
 
 // mock client for tests
-type Client struct {
+type DeployClient struct {
 	url           string // WebSocket server URL
 	tlsSkipVerify bool   // WebSocket connection instance
 	cfg           *config.Config
 }
 
-func NewClient(serverURL string, TlsSkipVerify bool) (*Client, error) {
-	client := &Client{url: serverURL,
+func NewClient(serverURL string, TlsSkipVerify bool) (*DeployClient, error) {
+	client := &DeployClient{url: serverURL,
 		tlsSkipVerify: TlsSkipVerify}
 	return client, nil
 }
 
-func (c *Client) Call(method string, timeout int64, params interface{}) (json.RawMessage, error) {
+func (c *DeployClient) Call(method string, timeout int64, params interface{}) (json.RawMessage, error) {
 	if method == "app.config" {
 		var resp json.RawMessage
 		data := map[string]interface{}{
@@ -140,7 +140,7 @@ func jobRunner(job *truenas_api.Job) {
 	close(job.ProgressCh)
 }
 
-func (c *Client) CallWithJob(method string, params interface{}, callback func(progress float64, state string, desc string)) (*truenas_api.Job, error) {
+func (c *DeployClient) CallWithJob(method string, params interface{}, callback func(progress float64, state string, desc string)) (*truenas_api.Job, error) {
 	var job truenas_api.Job
 	if method == "app.update" {
 		job = truenas_api.Job{
@@ -173,21 +173,21 @@ func (c *Client) CallWithJob(method string, params interface{}, callback func(pr
 	return &job, nil
 }
 
-func (c *Client) Close() error {
+func (c *DeployClient) Close() error {
 	return nil
 }
 
-func (c *Client) Login(username string, password string, apiKey string) error {
+func (c *DeployClient) Login(username string, password string, apiKey string) error {
 	if apiKey == "test" {
 		return nil
 	}
 	return errors.New("mock.Client Login: invalid api key")
 }
 
-func (c *Client) SetConfig(cfg *config.Config) {
+func (c *DeployClient) SetConfig(cfg *config.Config) {
 	c.cfg = cfg
 }
 
-func (c *Client) SubscribeToJobs() error {
+func (c *DeployClient) SubscribeToJobs() error {
 	return nil
 }
