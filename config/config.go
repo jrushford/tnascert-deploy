@@ -48,7 +48,6 @@ type Config struct {
 	AddAsUiCertificate  bool   `ini:"add_as_ui_certificate"`  // Install as the active UI certificate if true
 	AddAsFTPCertificate bool   `ini:"add_as_ftp_certificate"` // Install as the active FTP service certificate if true
 	AddAsAppCertificate bool   `ini:"add_as_app_certificate"` // Install as the active APP service certificate if true
-	Environment         string `ini:"environment"`            // environment is either 'production' or 'test'
 	TimeoutSeconds      int64  `ini:"timeoutSeconds"`         // the number of seconds after which the truenas client calls fail
 	Debug               bool   `ini:"debug"`                  // debug logging if true
 	certName            string // instance generated certificate name
@@ -91,17 +90,9 @@ func (c *Config) CertName() string {
 }
 
 func (c *Config) checkConfig() error {
-	if c.Environment != "production" && c.Environment != "test" {
-		return fmt.Errorf("invalid environment setting, use 'production' or 'test'")
-	}
-	if c.Environment == "production" && len(c.Api_key) < 66 {
-		return fmt.Errorf("invalid or empty api_key")
-	}
 	// if not the cert_basename is not defined use the default
 	if c.CertBasename == "" {
 		c.CertBasename = Default_base_cert_name
-	} else if c.Environment == "test" {
-		c.CertBasename = "tnas-cert-deploy"
 	}
 	if c.ConnectHost == "" {
 		return fmt.Errorf("connect_host is not defined")

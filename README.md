@@ -49,7 +49,6 @@ path to the config file.
     + add_as_ui_certificate  bool    - install as the active UI certificate if true
     + add_as_ftp_certificate bool    - install as the active FTP service certificate if true
     + add_as_app_certificate bool    - install as the active APP service certificate if true
-    + environment            string  - environment is either 'production' or 'test'
     + timeoutSeconds         int64   - the number of seconds after which the truenas client calls fail
     + debug                  bool    - debug logging if true
 

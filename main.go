@@ -22,6 +22,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"github.com/pborman/getopt/v2"
+	"github.com/truenas/api_client_golang/truenas_api"
 	"log"
 	"os"
 	"tnascert-deploy/config"
@@ -61,6 +62,7 @@ func main() {
 
 	cfg, err := config.New(*configFile, section)
 	if err != nil {
+		getopt.PrintUsage(os.Stdout)
 		log.Fatalln("error loading config,", err)
 	}
 
@@ -72,8 +74,21 @@ func main() {
 		log.Println("verified the certificate key pair")
 	}
 
+	serverURL := fmt.Sprintf("%s://%s:%d/%s", cfg.Protocol, cfg.ConnectHost, cfg.Port, deploy.Endpoint)
+	client, err := truenas_api.NewClient(serverURL, cfg.TlsSkipVerify)
+	if err != nil {
+		log.Println("error creating the client,", err)
+		os.Exit(1)
+	}
+	defer func(client *truenas_api.Client) {
+		err := client.Close()
+		if err != nil {
+			log.Printf("failed to close the client connection, %v", err)
+		}
+	}(client)
+
 	// deploy the certificate key pair
-	err = deploy.InstallCertificate(cfg)
+	err = deploy.InstallCertificate(client, cfg)
 	if err != nil {
 		log.Printf("installing the certificate failed, %v", err)
 	}
