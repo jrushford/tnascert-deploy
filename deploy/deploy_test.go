@@ -23,12 +23,168 @@ import (
 	"tnascert-deploy/config"
 )
 
+func TestClientAPIKeyLogin(t *testing.T) {
+	configFile := "test_files/tnas-cert.ini"
+	cfgList, err := config.LoadConfig(configFile)
+	if err != nil {
+		t.Errorf("loading the test config failed with error: %v", err)
+	}
+	cfg, ok := cfgList["deploy_default"]
+	if !ok {
+		t.Errorf("invalid section 'deploy_default'")
+	}
+
+	serverURL := cfg.ServerURL()
+	client, err := NewClient(serverURL, cfg.TlsSkipVerify)
+	if err != nil {
+		t.Errorf("creating a client failed with error: %v", err)
+	}
+
+	// login with username and password
+	err = clientLogin(client, cfg)
+	if err != nil {
+		t.Errorf("client login failed with error: %v", err)
+	}
+}
+
+func TestClientBadAPIKey(t *testing.T) {
+	configFile := "test_files/tnas-cert.ini"
+	cfgList, err := config.LoadConfig(configFile)
+	if err != nil {
+		t.Errorf("loading the test config failed with error: %v", err)
+	}
+	cfg, ok := cfgList["bad-api-key"]
+	if !ok {
+		t.Errorf("invalid section 'bad-api-key'")
+	}
+
+	serverURL := cfg.ServerURL()
+	client, err := NewClient(serverURL, cfg.TlsSkipVerify)
+	if err != nil {
+		t.Errorf("creating a client failed with error: %v", err)
+	}
+
+	// login with username and password
+	err = clientLogin(client, cfg)
+	if err == nil {
+		t.Errorf("client login should fail with bad api key: %v", err)
+	}
+}
+
+func TestClientUserNamePasswordLogin(t *testing.T) {
+	configFile := "test_files/tnas-cert.ini"
+	cfgList, err := config.LoadConfig(configFile)
+	if err != nil {
+		t.Errorf("loading the test config failed with error: %v", err)
+	}
+	cfg, ok := cfgList["username-password"]
+	if !ok {
+		t.Errorf("invalid section 'username-password'")
+	}
+
+	serverURL := cfg.ServerURL()
+	client, err := NewClient(serverURL, cfg.TlsSkipVerify)
+	if err != nil {
+		t.Errorf("creating a client failed with error: %v", err)
+	}
+
+	// login with username and password
+	err = clientLogin(client, cfg)
+	if err != nil {
+		t.Errorf("client login failed with error: %v", err)
+	}
+}
+
+func TestClientBadUserName(t *testing.T) {
+	configFile := "test_files/tnas-cert.ini"
+	cfgList, err := config.LoadConfig(configFile)
+	if err != nil {
+		t.Errorf("loading the test config failed with error: %v", err)
+	}
+	cfg, ok := cfgList["bad-username"]
+	if !ok {
+		t.Errorf("invalid section 'bad-username'")
+	}
+
+	serverURL := cfg.ServerURL()
+	client, err := NewClient(serverURL, cfg.TlsSkipVerify)
+	if err != nil {
+		t.Errorf("creating a client failed with error: %v", err)
+	}
+
+	// login with username and password
+	err = clientLogin(client, cfg)
+	if err == nil {
+		t.Errorf("client login should faile with bad username error: %v", err)
+	}
+}
+
+func TestClientBadPassword(t *testing.T) {
+	configFile := "test_files/tnas-cert.ini"
+	cfgList, err := config.LoadConfig(configFile)
+	if err != nil {
+		t.Errorf("loading the test config failed with error: %v", err)
+	}
+	cfg, ok := cfgList["bad-password"]
+	if !ok {
+		t.Errorf("invalid section 'bad-password'")
+	}
+
+	serverURL := cfg.ServerURL()
+	client, err := NewClient(serverURL, cfg.TlsSkipVerify)
+	if err != nil {
+		t.Errorf("creating a client failed with error: %v", err)
+	}
+
+	// login with username and password
+	err = clientLogin(client, cfg)
+	if err == nil {
+		t.Errorf("client login should fail with bad password error: %v", err)
+	}
+}
+
+func TestVerifyCertificate(t *testing.T) {
+	configFile := "test_files/tnas-cert.ini"
+
+	// test vefifying a self signed cert
+	cfgList, err := config.LoadConfig(configFile)
+	if err != nil {
+		t.Errorf("error loading the test config: %v", err)
+	}
+	cfg, ok := cfgList["deploy_default"]
+	if !ok {
+		t.Errorf("invalid section 'deploy_default'")
+	}
+	err = verifyCertificateKeyPair(cfg.FullChainPath, cfg.Private_key_path)
+	if err != nil {
+		t.Errorf("error verifing a self signed certificate: %v", err)
+	}
+
+	// test verifying an expired self signed cert.
+	cfgList, err = config.LoadConfig(configFile)
+	if err != nil {
+		t.Errorf("error loading the test config: %v", err)
+	}
+	cfg, ok = cfgList["expired-cert"]
+	if !ok {
+		t.Errorf("invalid section 'expired-cert'")
+	}
+	err = verifyCertificateKeyPair(cfg.FullChainPath, cfg.Private_key_path)
+	if err == nil {
+		t.Errorf("failed to detect an expired certificate:")
+	}
+}
+
 func TestDeployPkg(t *testing.T) {
 	configFile := "test_files/tnas-cert.ini"
 
-	cfg, err := config.New(configFile, "default")
-	if cfg == nil || err != nil {
-		t.Errorf("New config failed with error: %v", err)
+	cfgList, err := config.LoadConfig(configFile)
+	if err != nil {
+		t.Errorf("error loading the test config: %v", err)
+	}
+	cfg, ok := cfgList["deploy_default"]
+	if !ok {
+		t.Errorf("invalid section 'deploy_default'")
 	}
 	certName := cfg.CertName()
 	fmt.Printf("certName: %s\n", certName)
@@ -36,14 +192,9 @@ func TestDeployPkg(t *testing.T) {
 	serverURL := cfg.ServerURL()
 	client, err := NewClient(serverURL, cfg.TlsSkipVerify)
 	if err != nil {
-		t.Errorf("New client failed with error: %v", err)
+		t.Errorf("error creating a client: %v", err)
 	}
 	client.SetConfig(cfg)
-
-	err = clientLogin(client, cfg)
-	if err != nil {
-		t.Errorf("client login failed with error: %v", err)
-	}
 
 	err = createCertificate(client, cfg)
 	if err != nil {
@@ -52,22 +203,22 @@ func TestDeployPkg(t *testing.T) {
 
 	err = loadCertificateList(client, cfg)
 	if err != nil {
-		t.Errorf("load certificate list failed with error: %v", err)
+		t.Errorf("load the certificate list failed with error: %v", err)
 	}
 
 	err = addAsFTPCertificate(client, cfg)
 	if err != nil {
-		t.Errorf("addAsFTPCertificate failed with error: %v", err)
+		t.Errorf("adding an FTP certificate failed with error: %v", err)
 	}
 
 	result, err := addAsUICertificate(client, cfg)
 	if err != nil && result != true {
-		t.Errorf("addAsUICertificate failed with error: %v", err)
+		t.Errorf("adding a UI certificate failed with error: %v", err)
 	}
 
 	err = addAsAppCertificate(client, cfg)
 	if err != nil {
-		t.Errorf("addAsAppCertificate failed with error: %v", err)
+		t.Errorf("add an APP certificate failed with error: %v", err)
 	}
 
 	err = deleteCertificates(client, cfg)

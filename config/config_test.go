@@ -18,53 +18,81 @@
 package config
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 )
 
-func TestNewConfig(t *testing.T) {
+func TestLoadConfig(t *testing.T) {
+	configFile := "test_files/tnas-loadconfig.ini"
+
+	cfg_list, err := LoadConfig(configFile)
+	if err != nil {
+		t.Errorf("loading the test config failed with error: %v", err)
+	}
+	if len(cfg_list) != 3 {
+		t.Errorf("the config list size should be 3")
+	}
+	if cfg_list["deploy_default"].ConnectHost != "nas01.mydomain.com" {
+		t.Errorf("connect_host should be nas01.mydomain.com")
+	}
+	if cfg_list["nas02"].ConnectHost != "nas02.mydomain.com" {
+		t.Errorf("connect_host should be nas02.mydomain.com")
+	}
+	if cfg_list["nas03"].ConnectHost != "nas03.mydomain.com" {
+		t.Errorf("connect_host should be nas03.mydomain.com")
+	}
+}
+
+func TestReadConfigs(t *testing.T) {
 	configFile := "test_files/tnas-cert.ini"
 
 	// test loading the default config section
-	cfg, err := New(configFile, "default")
-	if cfg == nil || err != nil {
-		t.Errorf("New config failed with error: %v", err)
+	cfgList, err := LoadConfig(configFile)
+	if err != nil {
+		t.Errorf("loading the test config failed with error: %v", err)
+	}
+	cfg, ok := cfgList["deploy_default"]
+	if !ok {
+		t.Fatalf("invalid section 'deploy_default'")
 	}
 	if cfg.ConnectHost != "nas01.mydomain.com" {
-		t.Errorf("Connect_host should be nas01.mydomain.com")
+		t.Errorf("connect_host should be nas01.mydomain.com")
 	}
 	if cfg.Private_key_path != "test_files/privkey.pem" {
-		t.Errorf("Private_key_path should be test_files/privkey.pem")
+		t.Errorf("private_key_path should be test_files/privkey.pem")
 	}
 	if cfg.FullChainPath != "test_files/fullchain.pem" {
-		t.Errorf("Fullchain_path should be test_files/fullchain.pem")
+		t.Errorf("fullchain_path should be test_files/fullchain.pem")
 	}
 	if cfg.Protocol != "wss" {
-		t.Errorf("Protocol should be wss")
+		t.Errorf("protocol should be wss")
 	}
 	if cfg.TlsSkipVerify != false {
-		t.Errorf("TLS_skip_verify should be false")
+		t.Errorf("tls_skip_verify should be false")
 	}
 	if cfg.DeleteOldCerts != true {
-		t.Errorf("Delete_old_certs should be true")
+		t.Errorf("delete_old_certs should be true")
 	}
 	if cfg.AddAsUiCertificate != true {
-		t.Errorf("Add_as_ui_certificate should be true")
+		t.Errorf("add_as_ui_certificate should be true")
 	}
 
 	// test opening  non-existent file
-	cfg, err = New("non_existent_file", "default")
-	if err == nil && cfg != nil {
-		t.Errorf("Exepected an error opening a non-existent file: %v", err)
+	cfgList, err = LoadConfig("non_existent_file")
+	if err == nil {
+		t.Errorf("exepected an error opening a non-existent file: %v", err)
 	}
 
 	// test nas02 config section
-	if cfg, err = New(configFile, "nas02"); err != nil {
-		t.Errorf("New config failed with error: %v", err)
+	if cfgList, err = LoadConfig(configFile); err != nil {
+		t.Errorf("loading the test config failed with error: %v", err)
+	}
+	cfg, ok = cfgList["nas02"]
+	if cfg == nil && !ok {
+		t.Errorf("section 'nas02' does not exist")
 	}
 	if cfg.ConnectHost != "nas02.mydomain.com" {
-		t.Errorf("Connect_host should be nas02.mydomain.com")
+		t.Errorf("connect_host should be nas02.mydomain.com")
 	}
 	serverURL := cfg.ServerURL()
 	if serverURL != "wss://nas02.mydomain.com:443/api/current" {
@@ -73,25 +101,50 @@ func TestNewConfig(t *testing.T) {
 
 	certName := cfg.CertName()
 	if strings.HasPrefix(certName, "letsencrypt-") == false {
-		t.Errorf("CertName Prefix should be letsencrypt-")
-		fmt.Printf("CertName: %s\n", certName)
+		t.Errorf("certname prefix should be letsencrypt-")
 	}
 
 	// test checkConfig function
 	if err = cfg.checkConfig(); err != nil {
-		t.Errorf("Check config failed with error: %v", err)
+		t.Errorf("checkConfig() failed with error: %v", err)
 	}
 
 	// test nas03 config section
-	if cfg, err = New(configFile, "nas03"); err != nil {
-		t.Errorf("New config failed with error: %v", err)
+	if cfgList, err = LoadConfig(configFile); err != nil {
+		t.Errorf("loading the test config failed with error: %v", err)
+	}
+	cfg, ok = cfgList["nas03"]
+	if !ok {
+		t.Errorf("invalid section 'nas03'")
 	}
 	if cfg.ConnectHost != "nas03.mydomain.com" {
-		t.Errorf("Connect_host should be nas02.mydomain.com")
+		t.Errorf("connect_host should be nas02.mydomain.com")
 	}
 
-	// test loading a non-existent config section
-	if cfg, err = New(configFile, "nas10"); err == nil {
-		t.Errorf("New config failed with error: %v", err)
+	// load a config file with no cert_base_name defined
+	cfg, ok = cfgList["no_cert_basename"]
+	if !ok {
+		t.Errorf("invalid section 'no_cert_basename'")
+	}
+	if cfg != nil && cfg.CertBasename != Default_base_cert_name {
+		t.Errorf("cert_basename should be %s", Default_base_cert_name)
+	}
+
+	// load a config file with no protocol defined
+	cfg, ok = cfgList["no_protocol"]
+	if !ok {
+		t.Errorf("invalid section 'no_protocol'")
+	}
+	if cfg != nil && cfg.Protocol != Default_protocol {
+		t.Errorf("protocol should be the %s", Default_protocol)
+	}
+
+	// load a config file with no timeout seconds defined
+	cfg, ok = cfgList["no_timeout_seconds"]
+	if !ok {
+		t.Errorf("invalid section 'no_timeout_seconds'")
+	}
+	if cfg != nil && cfg.TimeoutSeconds != Default_timeout_seconds {
+		t.Errorf("timeout_seconds should be %d", Default_timeout_seconds)
 	}
 }

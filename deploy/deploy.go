@@ -18,13 +18,17 @@
 package deploy
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/truenas/api_client_golang/truenas_api"
 	"log"
 	"os"
 	"reflect"
 	"strings"
+	"time"
 	"tnascert-deploy/config"
 )
 
@@ -65,7 +69,7 @@ func addAsAppCertificate(client Client, cfg *config.Config) error {
 	var certName = cfg.CertName()
 	ID, ok := certsList[certName]
 	if !ok {
-		return fmt.Errorf("certificate %s not found in the certificates list", certName)
+		return fmt.Errorf("certificate %s was not found in the certificates list", certName)
 	}
 	args := []interface{}{}
 	var response AppListQueryResponse
@@ -105,10 +109,10 @@ func addAsAppCertificate(client Client, cfg *config.Config) error {
 			params = append(params, n)
 
 			job, err := client.CallWithJob("app.update", params, func(progress float64, state string, desc string) {
-				log.Printf("Job Progress: %.2f%%, State: %s, Description: %s", progress, state, desc)
+				log.Printf("job progress: %.2f%%, state: %s, description: %s", progress, state, desc)
 			})
 			if err != nil {
-				return fmt.Errorf("failed to update app certificate, %v", err)
+				return fmt.Errorf("failed to update the app certificate, %v", err)
 			}
 			log.Printf("started the app update job with ID: %d", job.ID)
 
@@ -116,12 +120,12 @@ func addAsAppCertificate(client Client, cfg *config.Config) error {
 			for !job.Finished {
 				select {
 				case progress := <-job.ProgressCh:
-					log.Printf("Job progress: %.2f%%", progress)
+					log.Printf("job progress: %.2f%%", progress)
 				case err := <-job.DoneCh:
 					if err != "" {
 						return fmt.Errorf("job failed: %v", err)
 					} else {
-						log.Println("Job completed successfully!")
+						log.Println("job completed successfully!")
 					}
 				}
 			}
@@ -137,7 +141,7 @@ func addAsFTPCertificate(client Client, cfg *config.Config) error {
 	var certName = cfg.CertName()
 	ID, ok := certsList[certName]
 	if !ok {
-		return fmt.Errorf("certificate %s not found in the certificates list", certName)
+		return fmt.Errorf("certificate %s was not found in the certificates list", certName)
 	}
 	pmap := map[string]int64{
 		"ssltls_certificate": ID,
@@ -157,7 +161,7 @@ func addAsUICertificate(client Client, cfg *config.Config) (bool, error) {
 	var certName = cfg.CertName()
 	ID, ok := certsList[certName]
 	if !ok {
-		return false, fmt.Errorf("certificate %s not found in the certificates list", certName)
+		return false, fmt.Errorf("certificate %s was not found in the certificates list", certName)
 	}
 	pmap := map[string]int64{
 		"ui_certificate": ID,
@@ -172,17 +176,27 @@ func addAsUICertificate(client Client, cfg *config.Config) (bool, error) {
 
 // login with an API key
 func clientLogin(client Client, cfg *config.Config) error {
-	username, password := "", ""
-	if cfg.Api_key == "" {
-		return fmt.Errorf("login failure, o api key")
+	// prefer login with an API key
+	if cfg.Api_key != "" {
+		log.Printf("logging in using the API key")
+		err := client.Login("", "", cfg.Api_key)
+		if err != nil {
+			return fmt.Errorf("client login with api key failed, %v", err)
+		} else {
+			log.Printf("client logged in successfully!")
+			return nil
+		}
+	} else if cfg.Username != "" && cfg.Password != "" {
+		log.Printf("logging in using the username and password")
+		err := client.Login(cfg.Username, cfg.Password, "")
+		if err != nil {
+			return fmt.Errorf("client login with username and password failed, %v", err)
+		} else {
+			log.Printf("client logged in successfully!")
+			return nil
+		}
 	}
-	apikey := cfg.Api_key
-	err := client.Login(username, password, apikey)
-	if err == nil {
-		log.Println("successfully logged in")
-		return nil
-	}
-	return fmt.Errorf("login failed, %v", err)
+	return errors.New("no username and password or api key provided, login failed")
 }
 
 // deploy the certificate in TrueNAS
@@ -213,7 +227,7 @@ func createCertificate(client Client, cfg *config.Config) error {
 
 	// call the api to create and deploy the certificate
 	job, err := client.CallWithJob("certificate.create", args, func(progress float64, state string, desc string) {
-		log.Printf("Job Progress: %.2f%%, State: %s, Description: %s", progress, state, desc)
+		log.Printf("job progress: %.2f%%, state: %s, description: %s", progress, state, desc)
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create the certificate job,  %v", err)
@@ -225,12 +239,12 @@ func createCertificate(client Client, cfg *config.Config) error {
 	for !job.Finished {
 		select {
 		case progress := <-job.ProgressCh:
-			log.Printf("Job progress: %.2f%%", progress)
+			log.Printf("job progress: %.2f%%", progress)
 		case err := <-job.DoneCh:
 			if err != "" {
 				return fmt.Errorf("job failed: %v", err)
 			} else {
-				log.Println("Job completed successfully!")
+				log.Println("job completed successfully!")
 			}
 		}
 	}
@@ -242,7 +256,7 @@ func deleteCertificates(client Client, cfg *config.Config) error {
 	var certName = cfg.CertName()
 	_, ok := certsList[certName]
 	if !ok {
-		return fmt.Errorf("certificate %s not found in the certificates list", certName)
+		return fmt.Errorf("certificate %s was not found in the certificates list", certName)
 	}
 
 	for k, v := range certsList {
@@ -255,7 +269,7 @@ func deleteCertificates(client Client, cfg *config.Config) error {
 
 		arg := []int64{v}
 		job, err := client.CallWithJob("certificate.delete", arg, func(progress float64, state string, desc string) {
-			log.Printf("Job Progress: %.2f%%, State: %s, Description: %s", progress, state, desc)
+			log.Printf("job progress: %.2f%%, state: %s, description: %s", progress, state, desc)
 		})
 		if err != nil {
 			return fmt.Errorf("certificate deletion failed, %v", err)
@@ -269,7 +283,7 @@ func deleteCertificates(client Client, cfg *config.Config) error {
 		for !job.Finished {
 			select {
 			case progress := <-job.ProgressCh:
-				log.Printf("Job progress: %.2f%%", progress)
+				log.Printf("job progress: %.2f%%", progress)
 			case err := <-job.DoneCh:
 				if err != "" {
 					return fmt.Errorf("job failed: %v", err)
@@ -322,7 +336,7 @@ func loadCertificateList(client Client, cfg *config.Config) error {
 			}
 		}
 		if id, ok := certsList[certName]; ok == true {
-			log.Printf("found new certificate, %v, id: %d", cert["name"], id)
+			log.Printf("found the new certificate, %v, id: %d", cert["name"], id)
 			inlist = true
 		}
 	}
@@ -335,6 +349,38 @@ func loadCertificateList(client Client, cfg *config.Config) error {
 	return nil
 }
 
+func verifyCertificateKeyPair(cert_path string, key_path string) error {
+	cert, err := tls.LoadX509KeyPair(cert_path, key_path)
+	if err != nil {
+		return fmt.Errorf("LoadX509KeyPair error: %v", err)
+	}
+	c, err := x509.ParseCertificate(cert.Certificate[0])
+	if err != nil {
+		return fmt.Errorf("certificate parsing error: %v", err)
+	}
+	if time.Now().After(c.NotAfter) {
+		return fmt.Errorf("Your certificate expired, TrueNAS will not use an expired certificate")
+	}
+
+	roots, err := x509.SystemCertPool()
+	if err != nil {
+		log.Printf("could not load system certificate pool, %v", err)
+	}
+	opts := x509.VerifyOptions{
+		CurrentTime: time.Now(),
+		Roots:       roots,
+	}
+	_, err = c.Verify(opts)
+	// report certificate validation information.
+	if err != nil {
+		log.Printf("certificate verification: %v", err)
+	} else {
+		log.Printf("certificate verified successfully")
+	}
+
+	return nil
+}
+
 func InstallCertificate(client Client, cfg *config.Config) error {
 	var certName string = cfg.CertName()
 	var activated = false
@@ -343,6 +389,11 @@ func InstallCertificate(client Client, cfg *config.Config) error {
 		log.Println("client is Type:", reflect.TypeOf(client))
 	}
 	log.Printf("installing certificate: %s", certName)
+
+	// verify the certificate and private key
+	if err := verifyCertificateKeyPair(cfg.FullChainPath, cfg.Private_key_path); err != nil {
+		log.Fatalf("failed to verify certificate: %v", err)
+	}
 
 	// login
 	err := clientLogin(client, cfg)
