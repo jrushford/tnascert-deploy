@@ -28,19 +28,18 @@ vet: fmt
 	go vet ./...
 
 test: vet
-	go test
-	go test ./...
+	go test -cover ./...
 
 build: test
 	go build
 
 run-tests:
 	@echo "\nRunning main package tests"
-	@go test
+	@go test -cover
 	@echo "\nRunning config package tests"
-	@(cd config && go test)
+	@(cd config && go test -cover)
 	@echo "\nRunning deploy package tests"
-	@(cd deploy && go test)
+	@(cd deploy && go test -cover)
 
 clean: tnascert-deploy
 	rm tnascert-deploy

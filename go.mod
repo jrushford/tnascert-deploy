@@ -11,5 +11,5 @@ require (
 require (
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/stretchr/testify v1.10.0 // indirect
-	github.com/truenas/api_client_golang v0.0.0-20250418135347-880b20d42445 // indirect
+	github.com/truenas/api_client_golang v0.0.0-20250422141409-de238c6da9c4 // indirect
 )

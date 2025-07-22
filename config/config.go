@@ -29,7 +29,7 @@ const (
 	WSS                     = "wss"
 	Config_file             = "tnas-cert.ini"
 	Default_base_cert_name  = "tnas-cert-deploy"
-	Default_section         = "default"
+	Default_section         = "deploy_default"
 	Default_port            = 443
 	Default_protocol        = WSS
 	Default_timeout_seconds = 10
@@ -51,37 +51,39 @@ type Config struct {
 	AddAsAppCertificate bool   `ini:"add_as_app_certificate"` // Install as the active APP service certificate if true
 	TimeoutSeconds      int64  `ini:"timeoutSeconds"`         // the number of seconds after which the truenas client calls fail
 	Debug               bool   `ini:"debug"`                  // debug logging if true
+	Username            string `ini:"username"`               // an admin user name
+	Password            string `ini:"password"`               // admin users password
 	certName            string // instance generated certificate name
 	serverURL           string // instance generated server URL
 }
 
-func New(config_file string, section string) (*Config, error) {
-	c := Config{}
+func LoadConfig(config_file string) (map[string]*Config, error) {
+	var cfg_list = make(map[string]*Config)
 
 	// load the config file
-	cfg, err := ini.Load(config_file)
+	f, err := ini.Load(config_file)
 	if err != nil {
 		return nil, err
 	}
 
-	// lookup the config section
-	_, err = cfg.GetSection(section)
-	if err != nil {
-		return nil, err
+	for _, section := range f.Sections() {
+		name := section.Name()
+		if name == "DEFAULT" {
+			continue
+		}
+		var c = Config{}
+		err = f.Section(name).MapTo(&c)
+		if err != nil {
+			return nil, err
+		}
+		err = c.checkConfig()
+		if err != nil {
+			return nil, fmt.Errorf("error in section '%s': %v", name, err)
+		}
+		cfg_list[name] = &c
 	}
 
-	// map the config
-	err = cfg.Section(section).MapTo(&c)
-	if err != nil {
-		return nil, err
-	}
-
-	err = c.checkConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	return &c, nil
+	return cfg_list, nil
 }
 
 func (c *Config) CertName() string {
@@ -114,7 +116,7 @@ func (c *Config) checkConfig() error {
 		c.Port = Default_port
 	}
 	// if the protocol is not defined, use the default
-	if len(c.Protocol) == 0 {
+	if c.Protocol == "" {
 		c.Protocol = Default_protocol
 	} else {
 		if c.Protocol != WS && c.Protocol != WSS {

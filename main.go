@@ -18,8 +18,6 @@
 package main
 
 import (
-	"crypto/tls"
-	"crypto/x509"
 	"fmt"
 	"github.com/pborman/getopt/v2"
 	"github.com/truenas/api_client_golang/truenas_api"
@@ -30,29 +28,14 @@ import (
 	"tnascert-deploy/deploy"
 )
 
-const release = "1.2"
-
-// simple verification of the certificate and private key, can they be loaded and parsed
-func verifyCertificateKeyPair(cert_path string, key_path string) error {
-	cert, err := tls.LoadX509KeyPair(cert_path, key_path)
-	if err != nil {
-		return fmt.Errorf("LoadX509KeyPair error: %v", err)
-	}
-	_, err = x509.ParseCertificate(cert.Certificate[0])
-	if err != nil {
-		return fmt.Errorf("ParseCertificate error: %v", err)
-	}
-	return nil
-}
+const release = "1.3"
 
 func main() {
-	var section string = config.Default_section
-
 	// parse out command line options
 	configFile := getopt.StringLong("config", 'c', config.Config_file, "full path to the configuration file")
 	help := getopt.BoolLong("help", 'h', "print usage information and exit")
 	version := getopt.BoolLong("version", 'v', "print version information and exit")
-	getopt.SetParameters("ini_section_name")
+	getopt.SetParameters("config_section ... config_section")
 
 	getopt.Parse()
 	if *help == true {
@@ -63,47 +46,48 @@ func main() {
 		if info, ok := debug.ReadBuildInfo(); ok {
 			for _, setting := range info.Settings {
 				if setting.Key == "vcs.revision" {
-					fmt.Printf("\nRelease: %s\nGit Revision: %s\n\n", release, setting.Value)
+					fmt.Printf("\nrelease: %s\ngit revision: %s\n\n", release, setting.Value)
 					os.Exit(0)
 				}
 			}
 		}
 	}
 	args := getopt.Args()
-	if len(args) > 0 {
-		section = args[0]
+	if len(args) == 0 {
+		args = append(args, config.Default_section)
 	}
 
-	cfg, err := config.New(*configFile, section)
+	cfgList, err := config.LoadConfig(*configFile)
 	if err != nil {
 		getopt.PrintUsage(os.Stdout)
 		log.Fatalln("error loading config,", err)
 	}
-
-	// run a simple check of the certificate and private key before deployment.
-	err = verifyCertificateKeyPair(cfg.FullChainPath, cfg.Private_key_path)
-	if err != nil {
-		log.Fatalf("verifying the certificate key pair, %v", err)
-	} else {
-		log.Println("verified the certificate key pair")
-	}
-
-	serverURL := cfg.ServerURL()
-	client, err := truenas_api.NewClient(serverURL, cfg.TlsSkipVerify)
-	if err != nil {
-		log.Println("error creating the client,", err)
-		os.Exit(1)
-	}
-	defer func(client *truenas_api.Client) {
-		err := client.Close()
-		if err != nil {
-			log.Printf("failed to close the client connection, %v", err)
+	for i := 0; i < len(args); i++ {
+		log.Printf("processing certificate installation for configuration section '%s'\n", args[i])
+		cfg, ok := cfgList[args[i]]
+		if !ok {
+			log.Fatalf("configuration section %s not found", args[i])
 		}
-	}(client)
 
-	// deploy the certificate key pair
-	err = deploy.InstallCertificate(client, cfg)
-	if err != nil {
-		log.Printf("installing the certificate failed, %v", err)
+		serverURL := cfg.ServerURL()
+		log.Printf("connecting to %s\n", cfg.ConnectHost)
+		client, err := truenas_api.NewClient(serverURL, cfg.TlsSkipVerify)
+		if err != nil {
+			log.Println("error creating the client,", err)
+			os.Exit(1)
+		}
+		defer func(client *truenas_api.Client) {
+			err := client.Close()
+			if err != nil {
+				log.Printf("failed to close the client connection, %v", err)
+			}
+		}(client)
+
+		// deploy the certificate key pair
+		err = deploy.InstallCertificate(client, cfg)
+		if err != nil {
+			log.Printf("installing the certificate failed, %v", err)
+		}
+		log.Printf("successfully installed the certificate for configuration section '%s'\n\n", args[i])
 	}
 }

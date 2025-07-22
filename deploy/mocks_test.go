@@ -177,10 +177,21 @@ func (c *DeployClient) Close() error {
 }
 
 func (c *DeployClient) Login(username string, password string, apiKey string) error {
-	if apiKey == "test" {
-		return nil
+	// apikey is preferred
+	if apiKey != "" {
+		if apiKey == "test" {
+			return nil
+		} else {
+			return errors.New("mock.Client Login: invalid api key")
+		}
+	} else if username != "" && password != "" {
+		if username == "admin" && password == "admin" {
+			return nil
+		} else {
+			return errors.New("mock.Client Login: invalid username or password")
+		}
 	}
-	return errors.New("mock.Client Login: invalid api key")
+	return errors.New("mock.Client Login: failed")
 }
 
 func (c *DeployClient) SetConfig(cfg *config.Config) {
