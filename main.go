@@ -87,7 +87,8 @@ func main() {
 		err = deploy.InstallCertificate(client, cfg)
 		if err != nil {
 			log.Printf("installing the certificate failed, %v", err)
-		}
-		log.Printf("successfully installed the certificate for configuration section '%s'\n\n", args[i])
+		} else {
+		  log.Printf("successfully installed the certificate for configuration section '%s'\n\n", args[i])
+    }
 	}
 }
