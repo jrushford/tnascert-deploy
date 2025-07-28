@@ -126,6 +126,7 @@ func addAsAppCertificate(client Client, cfg *config.Config) error {
 						return fmt.Errorf("job failed: %v", err)
 					} else {
 						log.Println("job completed successfully!")
+						break
 					}
 				}
 			}
@@ -245,6 +246,7 @@ func createCertificate(client Client, cfg *config.Config) error {
 				return fmt.Errorf("job failed: %v", err)
 			} else {
 				log.Println("job completed successfully!")
+				break
 			}
 		}
 	}
@@ -289,6 +291,7 @@ func deleteCertificates(client Client, cfg *config.Config) error {
 					return fmt.Errorf("job failed: %v", err)
 				} else {
 					log.Printf("job completed successfully, certificate %v was deleted", k)
+					break
 				}
 			}
 		}
