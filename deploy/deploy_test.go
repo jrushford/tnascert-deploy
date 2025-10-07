@@ -34,7 +34,7 @@ func TestClientAPIKeyLogin(t *testing.T) {
 		t.Errorf("invalid section 'deploy_default'")
 	}
 
-	serverURL := cfg.ServerURL()
+	serverURL := cfg.ServerURL("api/current")
 	client, err := NewClient(serverURL, cfg.TlsSkipVerify)
 	if err != nil {
 		t.Errorf("creating a client failed with error: %v", err)
@@ -58,7 +58,7 @@ func TestClientBadAPIKey(t *testing.T) {
 		t.Errorf("invalid section 'bad-api-key'")
 	}
 
-	serverURL := cfg.ServerURL()
+	serverURL := cfg.ServerURL("api/current")
 	client, err := NewClient(serverURL, cfg.TlsSkipVerify)
 	if err != nil {
 		t.Errorf("creating a client failed with error: %v", err)
@@ -82,7 +82,7 @@ func TestClientUserNamePasswordLogin(t *testing.T) {
 		t.Errorf("invalid section 'username-password'")
 	}
 
-	serverURL := cfg.ServerURL()
+	serverURL := cfg.ServerURL("api/current")
 	client, err := NewClient(serverURL, cfg.TlsSkipVerify)
 	if err != nil {
 		t.Errorf("creating a client failed with error: %v", err)
@@ -106,7 +106,7 @@ func TestClientBadUserName(t *testing.T) {
 		t.Errorf("invalid section 'bad-username'")
 	}
 
-	serverURL := cfg.ServerURL()
+	serverURL := cfg.ServerURL("api/current")
 	client, err := NewClient(serverURL, cfg.TlsSkipVerify)
 	if err != nil {
 		t.Errorf("creating a client failed with error: %v", err)
@@ -130,7 +130,7 @@ func TestClientBadPassword(t *testing.T) {
 		t.Errorf("invalid section 'bad-password'")
 	}
 
-	serverURL := cfg.ServerURL()
+	serverURL := cfg.ServerURL("api/current")
 	client, err := NewClient(serverURL, cfg.TlsSkipVerify)
 	if err != nil {
 		t.Errorf("creating a client failed with error: %v", err)
@@ -189,7 +189,7 @@ func TestDeployPkg(t *testing.T) {
 	certName := cfg.CertName()
 	fmt.Printf("certName: %s\n", certName)
 
-	serverURL := cfg.ServerURL()
+	serverURL := cfg.ServerURL("api/current")
 	client, err := NewClient(serverURL, cfg.TlsSkipVerify)
 	if err != nil {
 		t.Errorf("error creating a client: %v", err)

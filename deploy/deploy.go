@@ -23,12 +23,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/truenas/api_client_golang/truenas_api"
 	"log"
 	"os"
 	"reflect"
 	"strings"
 	"time"
+	"tnascert-deploy/clients"
 	"tnascert-deploy/config"
 )
 
@@ -56,16 +56,7 @@ type CertificateListResponse struct {
 // certificate list obtained from TrueNAS client or the mock client
 var certsList = map[string]int64{}
 
-// Client interface
-type Client interface {
-	Login(username string, password string, apiKey string) error
-	Call(method string, timeout int64, params interface{}) (json.RawMessage, error)
-	CallWithJob(method string, params interface{}, callback func(progress float64, state string, desc string)) (*truenas_api.Job, error)
-	Close() error
-	SubscribeToJobs() error
-}
-
-func addAsAppCertificate(client Client, cfg *config.Config) error {
+func addAsAppCertificate(client clients.Client, cfg *config.Config) error {
 	var certName = cfg.CertName()
 	ID, ok := certsList[certName]
 	if !ok {
@@ -138,7 +129,7 @@ func addAsAppCertificate(client Client, cfg *config.Config) error {
 	return nil
 }
 
-func addAsFTPCertificate(client Client, cfg *config.Config) error {
+func addAsFTPCertificate(client clients.Client, cfg *config.Config) error {
 	var certName = cfg.CertName()
 	ID, ok := certsList[certName]
 	if !ok {
@@ -158,7 +149,7 @@ func addAsFTPCertificate(client Client, cfg *config.Config) error {
 	return nil
 }
 
-func addAsUICertificate(client Client, cfg *config.Config) (bool, error) {
+func addAsUICertificate(client clients.Client, cfg *config.Config) (bool, error) {
 	var certName = cfg.CertName()
 	ID, ok := certsList[certName]
 	if !ok {
@@ -176,7 +167,7 @@ func addAsUICertificate(client Client, cfg *config.Config) (bool, error) {
 }
 
 // login with an API key
-func clientLogin(client Client, cfg *config.Config) error {
+func clientLogin(client clients.Client, cfg *config.Config) error {
 	// prefer login with an API key
 	if cfg.Api_key != "" {
 		log.Printf("logging in using the API key")
@@ -201,7 +192,7 @@ func clientLogin(client Client, cfg *config.Config) error {
 }
 
 // deploy the certificate in TrueNAS
-func createCertificate(client Client, cfg *config.Config) error {
+func createCertificate(client clients.Client, cfg *config.Config) error {
 	var certName = cfg.CertName()
 	// read in the certificate data
 	certPem, err := os.ReadFile(cfg.FullChainPath)
@@ -234,7 +225,9 @@ func createCertificate(client Client, cfg *config.Config) error {
 		return fmt.Errorf("failed to create the certificate job,  %v", err)
 	}
 
-	log.Printf("started the certificate creation job with ID: %d", job.ID)
+	if job.ID > 0 {
+		log.Printf("started the certificate creation job with ID: %d", job.ID)
+	}
 
 	// Monitor the progress of the job.
 	for !job.Finished {
@@ -254,7 +247,7 @@ func createCertificate(client Client, cfg *config.Config) error {
 	return nil
 }
 
-func deleteCertificates(client Client, cfg *config.Config) error {
+func deleteCertificates(client clients.Client, cfg *config.Config) error {
 	var certName = cfg.CertName()
 	_, ok := certsList[certName]
 	if !ok {
@@ -301,7 +294,7 @@ func deleteCertificates(client Client, cfg *config.Config) error {
 
 // poll and save all deployed certificates matching our Cert_basename
 // including the newly created certificate
-func loadCertificateList(client Client, cfg *config.Config) error {
+func loadCertificateList(client clients.Client, cfg *config.Config) error {
 	var inlist = false
 	var certName = cfg.CertName()
 	args := []interface{}{}
@@ -384,7 +377,7 @@ func verifyCertificateKeyPair(cert_path string, key_path string) error {
 	return nil
 }
 
-func InstallCertificate(client Client, cfg *config.Config) error {
+func InstallCertificate(client clients.Client, cfg *config.Config) error {
 	var certName string = cfg.CertName()
 	var activated = false
 

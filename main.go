@@ -20,15 +20,17 @@ package main
 import (
 	"fmt"
 	"github.com/pborman/getopt/v2"
-	"github.com/truenas/api_client_golang/truenas_api"
 	"log"
 	"os"
 	"runtime/debug"
+	"tnascert-deploy/clients"
+	"tnascert-deploy/clients/rest_client"
+	"tnascert-deploy/clients/rpc_client"
 	"tnascert-deploy/config"
 	"tnascert-deploy/deploy"
 )
 
-const release = "1.3"
+const release = "2.1"
 
 func main() {
 	// parse out command line options
@@ -69,14 +71,20 @@ func main() {
 			log.Fatalf("configuration section %s not found", args[i])
 		}
 
-		serverURL := cfg.ServerURL()
+		var client clients.Client
+		if cfg.ClientType == "rest_client" {
+			serverURL := cfg.ServerURL(rest_client.Endpoint)
+			client, err = rest_client.NewClient(serverURL, cfg.TlsSkipVerify)
+		} else {
+			serverURL := cfg.ServerURL(rpc_client.Endpoint)
+			client, err = rpc_client.NewClient(serverURL, cfg.TlsSkipVerify)
+		}
 		log.Printf("connecting to %s\n", cfg.ConnectHost)
-		client, err := truenas_api.NewClient(serverURL, cfg.TlsSkipVerify)
 		if err != nil {
 			log.Println("error creating the client,", err)
 			os.Exit(1)
 		}
-		defer func(client *truenas_api.Client) {
+		defer func(client clients.Client) {
 			err := client.Close()
 			if err != nil {
 				log.Printf("failed to close the client connection, %v", err)
@@ -88,7 +96,7 @@ func main() {
 		if err != nil {
 			log.Printf("installing the certificate failed, %v", err)
 		} else {
-		  log.Printf("successfully installed the certificate for configuration section '%s'\n\n", args[i])
-    }
+			log.Printf("successfully installed the certificate for configuration section '%s'\n\n", args[i])
+		}
 	}
 }

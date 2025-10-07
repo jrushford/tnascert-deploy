@@ -94,7 +94,7 @@ func TestReadConfigs(t *testing.T) {
 	if cfg.ConnectHost != "nas02.mydomain.com" {
 		t.Errorf("connect_host should be nas02.mydomain.com")
 	}
-	serverURL := cfg.ServerURL()
+	serverURL := cfg.ServerURL("api/current")
 	if serverURL != "wss://nas02.mydomain.com:443/api/current" {
 		t.Errorf("ServerURL should be wss://nas02.mydomain.com:443/api/current")
 	}

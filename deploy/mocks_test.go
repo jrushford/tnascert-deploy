@@ -25,8 +25,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/truenas/api_client_golang/truenas_api"
 	"time"
+	"tnascert-deploy/clients"
 	"tnascert-deploy/config"
 )
 
@@ -130,7 +130,7 @@ func (c *DeployClient) Call(method string, timeout int64, params interface{}) (j
 	return nil, nil
 }
 
-func jobRunner(job *truenas_api.Job) {
+func jobRunner(job *clients.Job) {
 	time.Sleep(2 * time.Second)
 	job.ProgressCh <- 100
 	job.DoneCh <- ""
@@ -139,10 +139,10 @@ func jobRunner(job *truenas_api.Job) {
 	close(job.ProgressCh)
 }
 
-func (c *DeployClient) CallWithJob(method string, params interface{}, callback func(progress float64, state string, desc string)) (*truenas_api.Job, error) {
-	var job truenas_api.Job
+func (c *DeployClient) CallWithJob(method string, params interface{}, callback func(progress float64, state string, desc string)) (*clients.Job, error) {
+	var job clients.Job
 	if method == "app.update" {
-		job = truenas_api.Job{
+		job = clients.Job{
 			ID:         100,
 			Method:     "app.update",
 			State:      "PENDING",
@@ -150,7 +150,7 @@ func (c *DeployClient) CallWithJob(method string, params interface{}, callback f
 			DoneCh:     make(chan string),
 		}
 	} else if method == "certificate.create" {
-		job = truenas_api.Job{
+		job = clients.Job{
 			ID:         101,
 			Method:     "certificate.create",
 			State:      "PENDING",
@@ -158,7 +158,7 @@ func (c *DeployClient) CallWithJob(method string, params interface{}, callback f
 			DoneCh:     make(chan string),
 		}
 	} else if method == "certificate.delete" {
-		job = truenas_api.Job{
+		job = clients.Job{
 			ID:         101,
 			Method:     "certificate.create",
 			State:      "PENDING",

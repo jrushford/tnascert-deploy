@@ -33,12 +33,12 @@ const (
 	Default_port            = 443
 	Default_protocol        = WSS
 	Default_timeout_seconds = 10
-	endpoint                = "api/current"
 )
 
 type Config struct {
 	Api_key             string `ini:"api_key"`                // TrueNAS 64 byte API Key
 	CertBasename        string `ini:"cert_basename"`          // basename for cert naming in TrueNAS
+	ClientType          string `ini:"client_type"`            // Client type, 'rpc_client' (default) or 'ddp_client'
 	ConnectHost         string `ini:"connect_host"`           // TrueNAS hostname
 	DeleteOldCerts      bool   `ini:"delete_old_certs"`       // whether to remove old certificates
 	FullChainPath       string `ini:"full_chain_path"`        // path to full_chain.pem
@@ -93,7 +93,7 @@ func (c *Config) CertName() string {
 	return c.certName
 }
 
-func (c *Config) ServerURL() string {
+func (c *Config) ServerURL(endpoint string) string {
 	if c.serverURL == "" {
 		c.serverURL = fmt.Sprintf("%s://%s:%d/%s", c.Protocol, c.ConnectHost, c.Port, endpoint)
 	}
@@ -104,6 +104,11 @@ func (c *Config) checkConfig() error {
 	// if not the cert_basename is not defined use the default
 	if c.CertBasename == "" {
 		c.CertBasename = Default_base_cert_name
+	}
+	if c.ClientType == "" {
+		c.ClientType = "rpc_client"
+	} else if c.ClientType != "rpc_client" && c.ClientType != "rest_client" {
+		return fmt.Errorf("invalid client_type use 'rpc_client' or 'rest_client'")
 	}
 	if c.ConnectHost == "" {
 		return fmt.Errorf("connect_host is not defined")
@@ -118,11 +123,14 @@ func (c *Config) checkConfig() error {
 	// if the protocol is not defined, use the default
 	if c.Protocol == "" {
 		c.Protocol = Default_protocol
-	} else {
-		if c.Protocol != WS && c.Protocol != WSS {
-			return fmt.Errorf("invalid protocol")
-		}
 	}
+	/*
+		} else {
+			if c.Protocol != WS && c.Protocol != WSS {
+				return fmt.Errorf("invalid protocol")
+			}
+		}
+	*/
 	if c.Private_key_path == "" {
 		return fmt.Errorf("private_key_path is not defined")
 	}
