@@ -23,13 +23,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/truenas/api_client_golang/truenas_api"
 	"log"
 	"os"
 	"reflect"
 	"strings"
 	"time"
 	"tnascert-deploy/config"
+
+	"github.com/truenas/api_client_golang/truenas_api"
 )
 
 type AppConfigResponse struct {
@@ -97,11 +98,8 @@ func addAsAppCertificate(client Client, cfg *config.Config) error {
 		}
 		if len(response.Result.IxCertificates) != 0 {
 			var params []interface{}
-			m := map[string]map[string]int64{
-				"network": {
-					"certificate_id": ID,
-				},
-			}
+			m := response.Result.Network
+			m["certificate_id"] = ID
 			n := map[string]interface{}{
 				"values": m,
 			}
