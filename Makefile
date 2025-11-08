@@ -31,6 +31,7 @@ test: vet
 	go test -cover ./...
 
 build: test
+	go get
 	go build
 
 run-tests:
@@ -38,8 +39,12 @@ run-tests:
 	@go test -cover
 	@echo "\nRunning config package tests"
 	@(cd config && go test -cover)
-	@echo "\nRunning deploy package tests"
-	@(cd deploy && go test -cover)
+	@echo "\nRunning clients package tests"
+	@(cd clients && go test -cover )
+	@echo "\nRunning clients/restapi package tests"
+	@(cd clients/restapi && go test -cover )
+	@echo "\nRunning clients/wsapi package tests"
+	@(cd clients/wsapi && go test -cover )
 
 clean: tnascert-deploy
 	rm tnascert-deploy

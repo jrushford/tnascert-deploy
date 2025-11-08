@@ -15,43 +15,56 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
- * Unit tests mock client for the deploy package.
- */
-
-package deploy
+package wsapi
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/truenas/api_client_golang/truenas_api"
+	"log"
+	"strings"
 	"time"
 	"tnascert-deploy/config"
 )
 
-// mock client for tests
-type DeployClient struct {
+type MockWebSocketClient struct {
 	url           string // WebSocket server URL
-	tlsSkipVerify bool   // WebSocket connection instance
+	tlsSkipVerify bool   // verify the TLS certificate
 	cfg           *config.Config
 }
 
-func NewClient(serverURL string, TlsSkipVerify bool) (*DeployClient, error) {
-	client := &DeployClient{url: serverURL,
-		tlsSkipVerify: TlsSkipVerify}
-	return client, nil
-}
+func (m *MockWebSocketClient) Call(method string, timeout int64, params interface{}) (json.RawMessage, error) {
+	if method == "app.certificate_choices" {
+		var resp json.RawMessage
+		certs := []map[string]interface{}{
+			{"id": 1, "name": "truenas_default"},
+			{"id": 2, "name": "tnas-cert-deploy-2024-12-31-0801683628"},
+			{"id": 3, "name": m.cfg.CertName()},
+		}
 
-func (c *DeployClient) Call(method string, timeout int64, params interface{}) (json.RawMessage, error) {
-	if method == "app.config" {
+		var args map[string]interface{} = make(map[string]interface{})
+		args = map[string]interface{}{
+			"jsonrpc": "2.0",
+			"id":      1,
+			"result":  certs,
+		}
+		res, err := json.Marshal(args)
+		if err != nil {
+			return resp, fmt.Errorf("mock.Call(): Error marshalling response: %v", err)
+		} else {
+			resp = json.RawMessage(res)
+			return resp, nil
+		}
+	} else if method == "app.config" {
 		var resp json.RawMessage
 		data := map[string]interface{}{
 			"jsonrpc": "2.0",
 			"id":      1,
 			"result": map[string]interface{}{"ix_certificates": map[string]interface{}{
 				"testcert": 100,
-			}, "network": map[string]interface{}{}},
+			}, "network": map[string]interface{}{
+				"certificate_id": 65,
+			}},
 		}
 		res, err := json.Marshal(data)
 		if err != nil {
@@ -89,27 +102,6 @@ func (c *DeployClient) Call(method string, timeout int64, params interface{}) (j
 			resp = json.RawMessage(res)
 			return resp, nil
 		}
-	} else if method == "app.certificate_choices" {
-		var resp json.RawMessage
-		certs := []map[string]interface{}{
-			{"id": 1, "name": "truenas_default"},
-			{"id": 2, "name": "tnas-cert-deploy-2024-12-31-0801683628"},
-			{"id": 3, "name": c.cfg.CertName()},
-		}
-
-		var args map[string]interface{} = make(map[string]interface{})
-		args = map[string]interface{}{
-			"jsonrpc": "2.0",
-			"id":      1,
-			"result":  certs,
-		}
-		res, err := json.Marshal(args)
-		if err != nil {
-			return resp, fmt.Errorf("mock.Call(): Error marshalling response: %v", err)
-		} else {
-			resp = json.RawMessage(res)
-			return resp, nil
-		}
 	} else if method == "ftp.update" {
 		result := map[string]interface{}{
 			"testresult": "ok",
@@ -126,20 +118,18 @@ func (c *DeployClient) Call(method string, timeout int64, params interface{}) (j
 			resp := json.RawMessage(res)
 			return resp, nil
 		}
+	} else if method == "system.general.ui_restart" {
+		return nil, nil
+	} else if method == "system.info" {
+		jsonResp := `{"jsonrpc": "2.0","result": {"version": "25.04.2.5"}}`
+		jsonRawmsg := json.RawMessage(jsonResp)
+		return jsonRawmsg, nil
 	}
+
 	return nil, nil
 }
 
-func jobRunner(job *truenas_api.Job) {
-	time.Sleep(2 * time.Second)
-	job.ProgressCh <- 100
-	job.DoneCh <- ""
-	job.Finished = true
-	close(job.DoneCh)
-	close(job.ProgressCh)
-}
-
-func (c *DeployClient) CallWithJob(method string, params interface{}, callback func(progress float64, state string, desc string)) (*truenas_api.Job, error) {
+func (m *MockWebSocketClient) CallWithJob(method string, params interface{}, callback func(progress float64, state string, desc string)) (*truenas_api.Job, error) {
 	var job truenas_api.Job
 	if method == "app.update" {
 		job = truenas_api.Job{
@@ -172,32 +162,47 @@ func (c *DeployClient) CallWithJob(method string, params interface{}, callback f
 	return &job, nil
 }
 
-func (c *DeployClient) Close() error {
+func (m *MockWebSocketClient) Close() error {
 	return nil
 }
 
-func (c *DeployClient) Login(username string, password string, apiKey string) error {
+func (m *MockWebSocketClient) Login(username string, password string, apiKey string) error {
 	// apikey is preferred
-	if apiKey != "" {
-		if apiKey == "test" {
-			return nil
-		} else {
-			return errors.New("mock.Client Login: invalid api key")
-		}
-	} else if username != "" && password != "" {
-		if username == "admin" && password == "admin" {
-			return nil
-		} else {
-			return errors.New("mock.Client Login: invalid username or password")
-		}
+	if apiKey == "test" {
+		log.Printf("found a valid test api key")
+		return nil
+	} else if username == "admin" && password == "admin" {
+		log.Printf("found a valid test login and  password")
+		return nil
 	}
-	return errors.New("mock.Client Login: failed")
+	return fmt.Errorf("login error: no valid credentials")
 }
 
-func (c *DeployClient) SetConfig(cfg *config.Config) {
-	c.cfg = cfg
+// mock test client constructor
+func NewMockWebSocketClient(cfg *config.Config) (*TrueNASWebSocket, error) {
+	mockWsClient := &MockWebSocketClient{
+		url:           strings.TrimRight(cfg.ServerURL(), "/") + EndPoint,
+		tlsSkipVerify: cfg.TlsSkipVerify,
+		cfg:           cfg,
+	}
+	wsClient := &TrueNASWebSocket{
+		Url:       strings.TrimRight(cfg.ServerURL(), "/") + EndPoint,
+		VerifySSL: cfg.TlsSkipVerify,
+		WSClient:  mockWsClient,
+		Cfg:       cfg,
+	}
+	return wsClient, nil
 }
 
-func (c *DeployClient) SubscribeToJobs() error {
+func (m *MockWebSocketClient) SubscribeToJobs() error {
 	return nil
+}
+
+func jobRunner(job *truenas_api.Job) {
+	time.Sleep(2 * time.Second)
+	job.ProgressCh <- 100
+	job.DoneCh <- ""
+	job.Finished = true
+	close(job.DoneCh)
+	close(job.ProgressCh)
 }

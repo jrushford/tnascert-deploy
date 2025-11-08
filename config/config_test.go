@@ -58,7 +58,7 @@ func TestReadConfigs(t *testing.T) {
 	if cfg.ConnectHost != "nas01.mydomain.com" {
 		t.Errorf("connect_host should be nas01.mydomain.com")
 	}
-	if cfg.Private_key_path != "test_files/privkey.pem" {
+	if cfg.PrivateKeyPath != "test_files/privkey.pem" {
 		t.Errorf("private_key_path should be test_files/privkey.pem")
 	}
 	if cfg.FullChainPath != "test_files/fullchain.pem" {
@@ -94,7 +94,7 @@ func TestReadConfigs(t *testing.T) {
 	if cfg.ConnectHost != "nas02.mydomain.com" {
 		t.Errorf("connect_host should be nas02.mydomain.com")
 	}
-	serverURL := cfg.ServerURL()
+	serverURL := cfg.ServerURL() + "/api/current"
 	if serverURL != "wss://nas02.mydomain.com:443/api/current" {
 		t.Errorf("ServerURL should be wss://nas02.mydomain.com:443/api/current")
 	}
