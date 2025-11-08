@@ -14,9 +14,9 @@ tnascert-deploy [-h] [-c value] section_name ... section_name<br>
 #### DESCRIPTION
 
 A tool used to import a TLS certificate and private key into a TrueNAS
-SCALE host running ***TrueNAS 25.04*** or later.  Once imported, the tool 
-may be configred to activate the TrueNAS host to use it as the main UI 
-TLS certificate.  
+SCALE host running ***TrueNAS 24.14, TrueNAS 25+, TrueNAS-CORE, or zVault***
+Once imported, the tool may be configred to activate the TrueNAS host to use
+it as the main UI TLS certificate.  
 
 The <b>tnas-cert.ini</b> file consists of multiple <b>sections</b> 
 The optional command line arguments <b>section_name</b> may by
@@ -47,22 +47,51 @@ path to the config file.
 
 #### CONFIG FILE SETTINGS
 
-    + api_key                string  - TrueNAS 64 byte API Key for login (preferred login method).
-    + username               string  - TrueNAS username with admin privileges (API key is preferred for login)
-    + password               string  - TrueNAS password for user with admin privileges, (API key is preferred for login)
-    + cert_basename          string  - basename for cert naming in TrueNAS
-    + connect_host           string  - TrueNAS DNS Fully Qualified Domain Name, FQDN, or IP address
-    + delete_old_certs       bool    - whether to remove old certificates, default is false
-    + full_chain_path        string  - path to full_chain.pem
-    + port                   uint64  - TrueNAS API endpoint port
-    + protocol               string  - websocket protocol 'ws' or 'wss' wss' is default
-    + private_key_path       string  - path to private_key.pem
-    + tls_skip_verify        bool    - strict SSL cert verification of the endpoint, false by default
-    + add_as_ui_certificate  bool    - install as the active UI certificate if true
-    + add_as_ftp_certificate bool    - install as the active FTP service certificate if true
-    + add_as_app_certificate bool    - install as the active APP service certificate if true
-    + timeoutSeconds         int64   - the number of seconds after which the truenas client calls fail
-    + debug                  bool    - debug logging if true
+In order to authenticate with a TrueNAS system, the user must either use the
+TrueNAS UI to generate and copy an **api_key** or use an admin **username**
+and **password** in the configuration file.  The **api_key** is preferred and
+if all three are defined in the configuration file, only the **api_key** will
+be used.  Do not include the **api_key** if you wish to use the **username**
+and **password**.
+
+ - **api_key**                - (optional, no default) TrueNAS 64 byte API Key for login the 
+                              preferred login method).
+ - **username**               - (optional, no default) TrueNAS username with admin privileges 
+                              (API key is preferred for login)
+ - **password**               - (optional, no default) TrueNAS password for user with admin 
+                              privileges, (API key is preferred for login)
+ - **cert_basename**          - (optional, default is **"tnascert-deploy"**) basename 
+                              for the certificate naming in TrueNAS.
+ - **connect_host**           - (required), TrueNAS DNS Fully Qualified Domain Name, FQDN, or 
+                              IP address
+ - **client_api**             - (optional, default is "wsapi") The TrueNAS API to use. Choices
+                              are: 'wsapi' for the JSON-RPC 2.0 websocket API or 'restapi' for
+                              the RESTful v2.0 API.
+ - **delete_old_certs**       - (optional, default is **false**) whether to remove old 
+                              certificates, default is false
+ - **full_chain_path**        - (required), full path name to the certificate full_chain.pem
+ - **private_key_path**       - (required), full path name to the certificate private_key.pem
+ - **port**                   - (optional, default is **443**) TrueNAS API endpoint port
+ - **protocol**               - (optional, default is **"wss"**) websocket protocol 'ws', 'wss', 
+                              'http', or 'https'.  'ws' and 'wss'are only for TrueNAS-SCALE
+                              systems utilizing the JSON-RPC 2.0 websocket API.  Use 'http' or
+                              'https' for systems utilizing the RESTful v2.0 API.
+ - **tls_skip_verify**        - (optional, default is **false**) strict SSL cert verification of
+							   the endpoint.
+ - **add_as_ui_certificate**  - (optional, default is **false**) install as the active UI
+                              certificate if true
+ - **add_as_ftp_certificate** - (optional, default is **false**) install as the active FTP
+                              service certificate if true
+ - **add_as_app_certificate** - (optional, default is **false**) install as the active APP
+                              service certificate if true to the apps listed in the 'app_list'
+ - **app_list**               - (optional, no default) A comma separated list of docker apps
+                              that you wish to have the newly imported certificate used.
+                              Apps in the list are only set to used the certificate if they have
+                              one assigned already. You must enable 'add_as_app_certificate' to
+                              process the list.
+ - **timeoutSeconds**         - (optional, default is **10**) the number of seconds after which
+							   the truenas client calls fail
+ - **debug**                  - (oprional, default is **false**) debug logging if true
 
 #### NOTES
 

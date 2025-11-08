@@ -25,30 +25,29 @@ import (
 )
 
 const (
-	WS                      = "ws"
-	WSS                     = "wss"
 	Config_file             = "tnas-cert.ini"
 	Default_base_cert_name  = "tnas-cert-deploy"
 	Default_section         = "deploy_default"
 	Default_port            = 443
-	Default_protocol        = WSS
+	Default_protocol        = "wss"
 	Default_timeout_seconds = 10
-	endpoint                = "api/current"
 )
 
 type Config struct {
-	Api_key             string `ini:"api_key"`                // TrueNAS 64 byte API Key
+	ApiKey              string `ini:"api_key"`                // TrueNAS 64 byte API Key
 	CertBasename        string `ini:"cert_basename"`          // basename for cert naming in TrueNAS
+	ClientApi           string `ini:"client_api"`             // Client type, 'wsapi' (default) or restapi
 	ConnectHost         string `ini:"connect_host"`           // TrueNAS hostname
 	DeleteOldCerts      bool   `ini:"delete_old_certs"`       // whether to remove old certificates
 	FullChainPath       string `ini:"full_chain_path"`        // path to full_chain.pem
 	Port                uint64 `ini:"port"`                   // TrueNAS API endpoint port
 	Protocol            string `ini:"protocol"`               // websocket protocol 'ws' or 'wss' 'wss' is default
-	Private_key_path    string `ini:"private_key_path"`       // path to private_key.pem
+	PrivateKeyPath      string `ini:"private_key_path"`       // path to private_key.pem
 	TlsSkipVerify       bool   `ini:"tls_skip_verify"`        // strict SSL cert verification of the endpoint
 	AddAsUiCertificate  bool   `ini:"add_as_ui_certificate"`  // Install as the active UI certificate if true
 	AddAsFTPCertificate bool   `ini:"add_as_ftp_certificate"` // Install as the active FTP service certificate if true
 	AddAsAppCertificate bool   `ini:"add_as_app_certificate"` // Install as the active APP service certificate if true
+	AppList             string `ini:"app_list"`               // comma separated list of Apps to deploy the certificate too.
 	TimeoutSeconds      int64  `ini:"timeoutSeconds"`         // the number of seconds after which the truenas client calls fail
 	Debug               bool   `ini:"debug"`                  // debug logging if true
 	Username            string `ini:"username"`               // an admin user name
@@ -95,7 +94,7 @@ func (c *Config) CertName() string {
 
 func (c *Config) ServerURL() string {
 	if c.serverURL == "" {
-		c.serverURL = fmt.Sprintf("%s://%s:%d/%s", c.Protocol, c.ConnectHost, c.Port, endpoint)
+		c.serverURL = fmt.Sprintf("%s://%s:%d", c.Protocol, c.ConnectHost, c.Port)
 	}
 	return c.serverURL
 }
@@ -104,6 +103,11 @@ func (c *Config) checkConfig() error {
 	// if not the cert_basename is not defined use the default
 	if c.CertBasename == "" {
 		c.CertBasename = Default_base_cert_name
+	}
+	if c.ClientApi == "" {
+		c.ClientApi = "wsapi"
+	} else if c.ClientApi != "restapi" && c.ClientApi != "wsapi" {
+		return fmt.Errorf("invalid client_api use 'restapi' or 'wsapi'")
 	}
 	if c.ConnectHost == "" {
 		return fmt.Errorf("connect_host is not defined")
@@ -118,12 +122,11 @@ func (c *Config) checkConfig() error {
 	// if the protocol is not defined, use the default
 	if c.Protocol == "" {
 		c.Protocol = Default_protocol
-	} else {
-		if c.Protocol != WS && c.Protocol != WSS {
-			return fmt.Errorf("invalid protocol")
-		}
+	} else if c.Protocol != "ws" && c.Protocol != "wss" && c.Protocol != "http" && c.Protocol != "https" {
+		return fmt.Errorf("invalid protocol use 'ws' or 'wss' or 'http' or 'https")
 	}
-	if c.Private_key_path == "" {
+
+	if c.PrivateKeyPath == "" {
 		return fmt.Errorf("private_key_path is not defined")
 	}
 	if c.TimeoutSeconds <= 0 {
