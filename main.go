@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/pborman/getopt/v2"
+    "flag"
 	"log"
 	"os"
 	"runtime/debug"
@@ -31,14 +31,19 @@ func NewClient(cfg *config.Config) (clients.Client, error) {
 }
 
 func main() {
-	configFile := getopt.StringLong("config", 'c', config.Config_file, "full path to the configuration file")
-	help := getopt.BoolLong("help", 'h', "print usage information and exit")
-	version := getopt.BoolLong("version", 'v', "print version information and exit")
-	getopt.SetParameters("config_section ... config_section")
+    var configFile *string
+    var help *bool
+    var version *bool
 
-	getopt.Parse()
+	configFile = flag.String("c", config.Config_file, "full path to the configuration file")
+	help = flag.Bool("h", false, "print usage information and exit")
+	version = flag.Bool("v", false, "print version information and exit")
+	//getopt.SetParameters("config_section ... config_section")
+
+	flag.Parse()
+	args := flag.Args()
 	if *help == true {
-		getopt.PrintUsage(os.Stdout)
+		flag.PrintDefaults()
 		os.Exit(0)
 	}
 	if *version == true {
@@ -51,14 +56,13 @@ func main() {
 			}
 		}
 	}
-	args := getopt.Args()
 	if len(args) == 0 {
 		args = append(args, config.Default_section)
 	}
 
 	cfgList, err := config.LoadConfig(*configFile)
 	if err != nil {
-		getopt.PrintUsage(os.Stdout)
+		//getopt.PrintUsage(os.Stdout)
 		log.Fatalln("error loading the config,", err)
 	}
 	for i := 0; i < len(args); i++ {
