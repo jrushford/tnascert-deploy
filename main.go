@@ -38,7 +38,6 @@ func main() {
 	configFile = flag.String("c", config.Config_file, "full path to the configuration file")
 	help = flag.Bool("h", false, "print usage information and exit")
 	version = flag.Bool("v", false, "print version information and exit")
-	//getopt.SetParameters("config_section ... config_section")
 
 	flag.Parse()
 	args := flag.Args()
@@ -62,7 +61,7 @@ func main() {
 
 	cfgList, err := config.LoadConfig(*configFile)
 	if err != nil {
-		//getopt.PrintUsage(os.Stdout)
+		flag.PrintDefaults()
 		log.Fatalln("error loading the config,", err)
 	}
 	for i := 0; i < len(args); i++ {
