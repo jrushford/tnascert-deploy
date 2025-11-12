@@ -31,9 +31,9 @@ func NewClient(cfg *config.Config) (clients.Client, error) {
 }
 
 func main() {
-	configFile := getopt.StringLong("config", 'c', config.Config_file, "full path to the configuration file")
 	help := getopt.BoolLong("help", 'h', "print usage information and exit")
 	version := getopt.BoolLong("version", 'v', "print version information and exit")
+	configFile := getopt.StringLong("config", 'c', config.Config_file, "full path to the configuration file")
 	getopt.SetParameters("config_section ... config_section")
 
 	getopt.Parse()
