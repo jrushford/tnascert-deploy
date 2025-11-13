@@ -19,6 +19,7 @@ package restapi
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -115,6 +116,7 @@ func (c *TrueNASRest) Login() error {
 // constructor
 func NewClient(cfg *config.Config) (clients.Client, error) {
 	var authToken string
+	var durationFromSeconds time.Duration = time.Duration(cfg.TimeoutSeconds) * time.Second
 	serverURL := strings.TrimRight(cfg.ServerURL(), "/") + EndPoint
 
 	if cfg.ApiKey != "" {
@@ -126,8 +128,14 @@ func NewClient(cfg *config.Config) (clients.Client, error) {
 		return nil, fmt.Errorf("no valid credentials have been supplied")
 	}
 
+	customTransport := http.DefaultTransport.(*http.Transport).Clone()
+	if cfg.Protocol == "https" {
+		customTransport.TLSClientConfig = &tls.Config{
+			InsecureSkipVerify: cfg.TlsSkipVerify,
+		}
+	}
 	authTransport := &AuthRoundTripper{
-		Transport: http.DefaultTransport,
+		Transport: customTransport,
 		AuthToken: authToken,
 	}
 
@@ -138,6 +146,7 @@ func NewClient(cfg *config.Config) (clients.Client, error) {
 
 	httpClient := &http.Client{
 		Transport: authTransport,
+		Timeout:   durationFromSeconds,
 		Jar:       jar,
 	}
 
