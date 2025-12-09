@@ -30,7 +30,8 @@
 
   The tool may be utilized as part of an ACME, Automated Certificate 
   Management Environment to deploy new or renewal certficates to TrueNAS 
-  systems.  The command line usage is as follows:
+  systems, see the **sample-scripts** directory for examples.  The command line 
+  usage is as follows:
 
   ```
   Usage: tnascert-deploy [-hv] [-c value] config_section ... config_section`
@@ -201,6 +202,11 @@ are supported using the RESTful v2.0 API.
 + [TrueNAS api_client_golang](https://github.com/truenas/api_client_golang)
 + [TrueNAS websocket API documentaion](https://www.truenas.com/docs/api/scale_websocket_api.html)
 
+### Sponsor
+
+If you find this tool useful, consider buying me a cup of coffee or
+sponsoring me by hitting the ***Sponsor*** button at the top of this
+page..  
 ### Contact
 + John J. Rushford
 + jrushford@apache.org
