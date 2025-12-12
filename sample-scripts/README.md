@@ -17,3 +17,7 @@ configuration file to /usr/local/etc/tnas-cert.ini and that the
 Modify the script for your needs.  The script is pretty basic but should
 work fine.
 
+EXAMPLE acme.sh usage with the deploy-hook.sh:
+
+  acme.sh --install-cert -d mydomain.org --deploy-hook deploy-hook.sh
+
