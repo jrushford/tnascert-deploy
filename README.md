@@ -30,7 +30,8 @@
 
   The tool may be utilized as part of an ACME, Automated Certificate 
   Management Environment to deploy new or renewal certficates to TrueNAS 
-  systems.  The command line usage is as follows:
+  systems, see the **sample-scripts** directory for examples.  The command line 
+  usage is as follows:
 
   ```
   Usage: tnascert-deploy [-hv] [-c value] config_section ... config_section`
