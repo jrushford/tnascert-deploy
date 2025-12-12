@@ -7,7 +7,7 @@ using the websocket API, wsapi.  The 2nd entry is a sample for the older
 TrueNAS core or TrueNAS-SCALE version 24 using the restapi.
 
 Choose the appropriate configuration for your TrueNAS version and then
-edit then modify the api_key, connect_host, private_key_path, and 
+edit and add an api_key, connect_host, private_key_path, and 
 full_chain_path to suit your environment. See the Documentation at the
 main repository page for configuration file details.
 
@@ -17,7 +17,7 @@ configuration file to /usr/local/etc/tnas-cert.ini and that the
 Modify the script for your needs.  The script is pretty basic but should
 work fine.
 
-EXAMPLE acme.sh usage with the deploy-hook.sh:
+Example acme.sh usage with the deploy-hook.sh:
 
   acme.sh --install-cert -d mydomain.org --deploy-hook deploy-hook.sh
 
