@@ -17,7 +17,10 @@ configuration file to /usr/local/etc/tnas-cert.ini and that the
 Modify the script for your needs.  The script is pretty basic but should
 work fine.
 
-Example acme.sh usage with the deploy-hook.sh:
-
-  acme.sh --install-cert -d mydomain.org --deploy-hook deploy-hook.sh
+I use the **certbot** ACME client on my FreeBSD webserver to manage and 
+update my **letsencrypt** certificate.  Once the **certbot** client
+has been configured to work with my **cloudflare** DNS provider and
+letsencrypt, I install the **deploy-hook.sh** script in the **certbot**
+**renewal-hooks/deploy** directory.  From then on, my TrueNAS is 
+automatically updated when I receive a new certificate.
 
