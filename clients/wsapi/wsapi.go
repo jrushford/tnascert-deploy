@@ -112,15 +112,21 @@ func (c TrueNASWebSocket) Login() error {
 }
 
 func NewClient(cfg *config.Config) (clients.Client, error) {
+	var verifySSL bool
+	if cfg.TlsSkipVerify == true {
+		verifySSL = false
+	} else {
+		verifySSL = true
+	}
 	serverURL := strings.TrimRight(cfg.ServerURL(), "/") + EndPoint
-	cl, err := truenas_api.NewClient(serverURL, cfg.TlsSkipVerify)
+	cl, err := truenas_api.NewClient(serverURL, verifySSL)
 	if err != nil {
 		return nil, fmt.Errorf("error: %v", err)
 	}
 
 	websocket_client := TrueNASWebSocket{
 		Url:       serverURL,
-		VerifySSL: cfg.TlsSkipVerify,
+		VerifySSL: verifySSL,
 		WSClient:  cl,
 		Cfg:       cfg,
 	}
