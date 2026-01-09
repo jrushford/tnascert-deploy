@@ -47,6 +47,10 @@
 
 ####  Getting Started
 
+  NOTE: If your NAS is currently running with a self-signed or expired
+  certificate, please set the ***tls_skip_verify = true*** setting to avoid
+  connection TLS veification errors.
+
   Precompiled releases of 'tnascert-deploy' are available for FreeBSD, Debian
   Linux, MacOS, or Windows 11.  See the Releases section of this repository.
   The current Release is 2.0.
