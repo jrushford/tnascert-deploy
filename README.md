@@ -177,7 +177,9 @@ and **password**.
                               systems utilizing the JSON-RPC 2.0 websocket API.  Use 'http' or
                               'https' for systems utilizing the RESTful v2.0 API.
  - **tls_skip_verify**        - (optional, default is **false**) strict SSL cert verification of
-							   the endpoint.
+							   the endpoint. You should set this to true if your NAS is running 
+                               with a self-signed certificate that you're trying to replace in
+                               order to avoid TLS verification errors.
  - **add_as_ui_certificate**  - (optional, default is **false**) install as the active UI
                               certificate if true
  - **add_as_ftp_certificate** - (optional, default is **false**) install as the active FTP
