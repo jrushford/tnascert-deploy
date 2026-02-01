@@ -58,7 +58,11 @@
 
   build 'tnascert-deploy' using:
 
-    'go build' or 'make' if you have make installed
+    'make' - Using make builds a statically linked binary.
+
+    'go build' or 
+
+    'CGO_ENABLED=0 go build -ldflags="-s -w"' - for a statically linked binary.
    
   copy **tnascert-deploy** for use either as a command line tool or as part of
   your ACME deployment scripts and create an INI configuration file that 
