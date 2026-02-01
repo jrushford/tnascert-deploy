@@ -32,7 +32,7 @@ test: vet
 
 build: test
 	go get
-	go build
+	CGO_ENABLED=0 go build -ldflags="-s -w"
 
 run-tests:
 	@echo "\nRunning main package tests"
