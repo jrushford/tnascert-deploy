@@ -32,7 +32,7 @@ test: vet
 
 build: test
 	go get
-	CGO_ENABLED=0 go build -ldflags="-s -w"
+	CGO_ENABLED=0 go build -o tnascert-deploy -a -ldflags '-extldflags "-static"'
 
 run-tests:
 	@echo "\nRunning main package tests"

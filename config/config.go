@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"github.com/ncruces/go-strftime"
 	"gopkg.in/ini.v1"
+	"os"
+	"strconv"
 	"time"
 )
 
@@ -34,26 +36,34 @@ const (
 )
 
 type Config struct {
-	ApiKey              string `ini:"api_key"`                // TrueNAS 64 byte API Key
-	CertBasename        string `ini:"cert_basename"`          // basename for cert naming in TrueNAS
-	ClientApi           string `ini:"client_api"`             // Client type, 'wsapi' (default) or restapi
-	ConnectHost         string `ini:"connect_host"`           // TrueNAS hostname
-	DeleteOldCerts      bool   `ini:"delete_old_certs"`       // whether to remove old certificates
-	FullChainPath       string `ini:"full_chain_path"`        // path to full_chain.pem
-	Port                uint64 `ini:"port"`                   // TrueNAS API endpoint port
-	Protocol            string `ini:"protocol"`               // websocket protocol 'ws' or 'wss' 'wss' is default
-	PrivateKeyPath      string `ini:"private_key_path"`       // path to private_key.pem
-	TlsSkipVerify       bool   `ini:"tls_skip_verify"`        // strict SSL cert verification of the endpoint
-	AddAsUiCertificate  bool   `ini:"add_as_ui_certificate"`  // Install as the active UI certificate if true
-	AddAsFTPCertificate bool   `ini:"add_as_ftp_certificate"` // Install as the active FTP service certificate if true
-	AddAsAppCertificate bool   `ini:"add_as_app_certificate"` // Install as the active APP service certificate if true
-	AppList             string `ini:"app_list"`               // comma separated list of Apps to deploy the certificate too.
-	TimeoutSeconds      int64  `ini:"timeoutSeconds"`         // the number of seconds after which the truenas client calls fail
-	Debug               bool   `ini:"debug"`                  // debug logging if true
-	Username            string `ini:"username"`               // an admin user name
-	Password            string `ini:"password"`               // admin users password
-	certName            string // instance generated certificate name
-	serverURL           string // instance generated server URL
+	ApiKey                 string `ini:"api_key"`                // TrueNAS 64 byte API Key
+	CertBasename           string `ini:"cert_basename"`          // basename for cert naming in TrueNAS
+	ClientApi              string `ini:"client_api"`             // Client type, 'wsapi' (default) or restapi
+	ConnectHost            string `ini:"connect_host"`           // TrueNAS hostname
+	DeleteOldCertsStr      string `ini:"delete_old_certs"`       // whether to remove old certificates, String value
+	FullChainPath          string `ini:"full_chain_path"`        // path to full_chain.pem
+	PortStr                string `ini:"port"`                   // TrueNAS API endpoint port, String value
+	Protocol               string `ini:"protocol"`               // websocket protocol 'ws' or 'wss' 'wss' is default
+	PrivateKeyPath         string `ini:"private_key_path"`       // path to private_key.pem
+	TlsSkipVerifyStr       string `ini:"tls_skip_verify"`        // strict SSL cert verification of the endpoint, String value
+	AddAsUiCertificateStr  string `ini:"add_as_ui_certificate"`  // Install as the active UI certificate if true, String value
+	AddAsFTPCertificateStr string `ini:"add_as_ftp_certificate"` // Install as the active FTP service certificate if true, String value
+	AddAsAppCertificateStr string `ini:"add_as_app_certificate"` // Install as the active APP service certificate if true, String value
+	AppList                string `ini:"app_list"`               // comma separated list of Apps to deploy the certificate too.
+	TimeoutSecondsStr      string `ini:"timeoutSeconds"`         // the number of seconds after which the truenas client calls fail, String value
+	DebugStr               string `ini:"debug"`                  // debug logging if true, String value
+	Username               string `ini:"username"`               // an admin user name
+	Password               string `ini:"password"`               // admin users password
+	DeleteOldCerts         bool   // whether to remove old certificates
+	Port                   uint64 // TrueNAS API endpoint port
+	TlsSkipVerify          bool   // strict SSL cert verification of the endpoint
+	AddAsUiCertificate     bool   // Install as the active UI certificate if true.
+	AddAsFTPCertificate    bool   // Install as the active FTP certificate if true.
+	AddAsAppCertificate    bool   // Install as the active APP certificate if true.
+	TimeoutSeconds         int64  // the number of seconds after which the truenas client calls fail
+	Debug                  bool   // debug logging if true.
+	certName               string // instance generated certificate name.
+	serverURL              string // instance generated server URL
 }
 
 func LoadConfig(config_file string) (map[string]*Config, error) {
@@ -100,25 +110,68 @@ func (c *Config) ServerURL() string {
 }
 
 func (c *Config) checkConfig() error {
-	// if not the cert_basename is not defined use the default
+	// lookup the ApiKey
+	c.ApiKey = os.ExpandEnv(c.ApiKey)
+
+	// lookup the Username
+	c.Username = os.ExpandEnv(c.Username)
+
+	// lookup the Password
+	c.Password = os.ExpandEnv(c.Password)
+
+	// lookup the cert_basename
+	c.CertBasename = os.ExpandEnv(c.CertBasename)
 	if c.CertBasename == "" {
 		c.CertBasename = Default_base_cert_name
 	}
+
+	// lookup the connect_host
+	c.ConnectHost = os.ExpandEnv(c.ConnectHost)
+
+	// lookup the client_api
+	c.ClientApi = os.ExpandEnv(c.ClientApi)
 	if c.ClientApi == "" {
 		c.ClientApi = "wsapi"
 	} else if c.ClientApi != "restapi" && c.ClientApi != "wsapi" {
-		return fmt.Errorf("invalid client_api use 'restapi' or 'wsapi'")
+		return fmt.Errorf("invalid client_api '%s' use 'restapi' or 'wsapi'", c.ClientApi)
 	}
-	if c.ConnectHost == "" {
-		return fmt.Errorf("connect_host is not defined")
+
+	// lookup delete_old_certs
+	c.DeleteOldCertsStr = os.ExpandEnv(c.DeleteOldCertsStr)
+	if b, err := strconv.ParseBool(c.DeleteOldCertsStr); err == nil {
+		c.DeleteOldCerts = b
+	} else {
+		return err
 	}
+
+	//lookup the full_chain_path
+	c.FullChainPath = os.ExpandEnv(c.FullChainPath)
 	if c.FullChainPath == "" {
 		return fmt.Errorf("fullchain_path is not defined")
+	}
+
+	// lookup the private_key_path
+	c.PrivateKeyPath = os.ExpandEnv(c.PrivateKeyPath)
+	if c.PrivateKeyPath == "" {
+		return fmt.Errorf("private_key_path is not defined")
+	}
+
+	// lookup the port
+	c.PortStr = os.ExpandEnv(c.PortStr)
+	if c.PortStr != "" {
+		if i, err := strconv.ParseUint(c.PortStr, 10, 64); err == nil {
+			c.Port = i
+		} else {
+			return err
+		}
 	}
 	// if port is not defined, use the default
 	if c.Port == 0 {
 		c.Port = Default_port
 	}
+
+	// lookup the protocol
+	c.Protocol = os.ExpandEnv(c.Protocol)
 	// if the protocol is not defined, use the default
 	if c.Protocol == "" {
 		c.Protocol = Default_protocol
@@ -126,11 +179,60 @@ func (c *Config) checkConfig() error {
 		return fmt.Errorf("invalid protocol use 'ws' or 'wss' or 'http' or 'https")
 	}
 
-	if c.PrivateKeyPath == "" {
-		return fmt.Errorf("private_key_path is not defined")
+	// lookup tls_skip_verify
+	c.TlsSkipVerifyStr = os.ExpandEnv(c.TlsSkipVerifyStr)
+	if b, err := strconv.ParseBool(c.TlsSkipVerifyStr); err == nil {
+		c.TlsSkipVerify = b
+	} else {
+		return err
+	}
+
+	// lookup the add_as_ui_certificate
+	c.AddAsUiCertificateStr = os.ExpandEnv(c.AddAsUiCertificateStr)
+	if b, err := strconv.ParseBool(c.AddAsUiCertificateStr); err == nil {
+		c.AddAsUiCertificate = b
+	} else {
+		return err
+	}
+
+	// lookup the add_as_ftp_certificate
+	c.AddAsFTPCertificateStr = os.ExpandEnv(c.AddAsFTPCertificateStr)
+	if b, err := strconv.ParseBool(c.AddAsFTPCertificateStr); err == nil {
+		c.AddAsFTPCertificate = b
+	} else {
+		return err
+	}
+
+	// lookup the add_as_app_certificate
+	c.AddAsAppCertificateStr = os.ExpandEnv(c.AddAsAppCertificateStr)
+	if b, err := strconv.ParseBool(c.AddAsAppCertificateStr); err == nil {
+		c.AddAsAppCertificate = b
+	} else {
+		return err
+	}
+
+	// lookup the app_list
+	c.AppList = os.ExpandEnv(c.AppList)
+
+	// lookup the timeoutSeconds
+	c.TimeoutSecondsStr = os.ExpandEnv(c.TimeoutSecondsStr)
+	if c.TimeoutSecondsStr != "" {
+		if i, err := strconv.ParseInt(c.TimeoutSecondsStr, 10, 64); err == nil {
+			c.TimeoutSeconds = i
+		} else {
+			return err
+		}
 	}
 	if c.TimeoutSeconds <= 0 {
 		c.TimeoutSeconds = Default_timeout_seconds
+	}
+
+	// lookup the debug key
+	c.DebugStr = os.ExpandEnv(c.DebugStr)
+	if b, err := strconv.ParseBool(c.DebugStr); err == nil {
+		c.Debug = b
+	} else {
+		return err
 	}
 
 	return nil
