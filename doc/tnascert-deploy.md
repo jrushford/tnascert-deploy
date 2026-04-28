@@ -54,6 +54,22 @@ if all three are defined in the configuration file, only the **api_key** will
 be used.  Do not include the **api_key** if you wish to use the **username**
 and **password**.
 
+All the key values in the configuration INI file may be interpolated from the
+OS environment using the syntax **${VARIABLE_NAME}** if desired.  Environment
+variables must be set otherwise **tnascert-deploy** will exit with an error
+if you are trying to use an environment variable that is not set.
+
+For example to set sensitive fields from the environment, you can use:
+
+	api_key = ${API_KEY}
+    username = ${USERNAME}
+    password = ${PASSWORD}
+
+You could also for example use multiple environment variables such as:
+
+   connect_host = ${HOSTNAME}.${DOMAIN_NAME}
+
+
  - **api_key**                - (optional, no default) TrueNAS 64 byte API Key for login the 
                               preferred login method).
  - **username**               - (optional, no default) TrueNAS username with admin privileges 

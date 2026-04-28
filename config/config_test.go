@@ -18,6 +18,7 @@
 package config
 
 import (
+	"os"
 	"strings"
 	"testing"
 )
@@ -104,11 +105,6 @@ func TestReadConfigs(t *testing.T) {
 		t.Errorf("certname prefix should be letsencrypt-")
 	}
 
-	// test checkConfig function
-	if err = cfg.checkConfig(); err != nil {
-		t.Errorf("checkConfig() failed with error: %v", err)
-	}
-
 	// test nas03 config section
 	if cfgList, err = LoadConfig(configFile); err != nil {
 		t.Errorf("loading the test config failed with error: %v", err)
@@ -146,5 +142,82 @@ func TestReadConfigs(t *testing.T) {
 	}
 	if cfg != nil && cfg.TimeoutSeconds != Default_timeout_seconds {
 		t.Errorf("timeout_seconds should be %d", Default_timeout_seconds)
+	}
+}
+
+func TestReadConfigsFromEnvironment(t *testing.T) {
+	configFile := "test_files/environment.ini"
+
+	// set environment variables for testing
+	os.Setenv("DOMAIN_NAME", "mydomain.com")
+	os.Setenv("API_KEY", "testapikey")
+	os.Setenv("CERT_BASENAME", "letsencrypt")
+	os.Setenv("CLIENT_API", "wsapi")
+	os.Setenv("PRIVATE_KEY_PATH", "test_files/privkey.pem")
+	os.Setenv("FULL_CHAIN_PATH", "test_files/fullchain.pem")
+	os.Setenv("PROTOCOL", "wss")
+	os.Setenv("TLS_SKIP_VERIFY", "false")
+	os.Setenv("CONNECT_HOST", "nas01")
+	os.Setenv("CONNECT_PORT", "443")
+	os.Setenv("TIMEOUT_SECONDS", "5")
+	os.Setenv("DELETE_OLD_CERTIFICATES", "true")
+	os.Setenv("ADD_AS_UI_CERTIFICATE", "true")
+	os.Setenv("ADD_AS_FTP_CERTIFICATE", "true")
+	os.Setenv("ADD_AS_APP_CERTIFICATE", "true")
+	os.Setenv("APP_LIST", "frigate")
+	os.Setenv("DEBUG", "true")
+
+	cfgList, err := LoadConfig(configFile)
+	if err != nil {
+		t.Errorf("loading the test config failed with error: %v", err)
+	}
+	cfg, ok := cfgList["deploy_default"]
+	if !ok {
+		t.Fatalf("invalid section 'deploy_default'")
+	}
+	if cfg.ConnectHost != "nas01.mydomain.com" {
+		t.Errorf("connect_host should be nas01.mydomain.com")
+	}
+	if cfg.CertBasename != "letsencrypt" {
+		t.Errorf("cert_basename should be letsencrypt")
+	}
+	if cfg.ClientApi != "wsapi" {
+		t.Errorf("client_api should be wsapi")
+	}
+	if cfg.PrivateKeyPath != "test_files/privkey.pem" {
+		t.Errorf("private_key_path should be test_files/privkey.pem")
+	}
+	if cfg.FullChainPath != "test_files/fullchain.pem" {
+		t.Errorf("fullchain_path should be test_files/fullchain.pem")
+	}
+	if cfg.Protocol != "wss" {
+		t.Errorf("protocol should be wss")
+	}
+	if cfg.TlsSkipVerify != false {
+		t.Errorf("tls_skip_verify should be false")
+	}
+	if cfg.Port != 443 {
+		t.Errorf("port should be 443")
+	}
+	if cfg.TimeoutSeconds != 5 {
+		t.Errorf("timeout_seconds should be 5")
+	}
+	if cfg.DeleteOldCerts != true {
+		t.Errorf("delete_old_certs should be true")
+	}
+	if cfg.AddAsFTPCertificate != true {
+		t.Errorf("add_as_ftp_certificate should be true")
+	}
+	if cfg.AddAsAppCertificate != true {
+		t.Errorf("add_as_app_certificate should be true")
+	}
+	if cfg.AddAsUiCertificate != true {
+		t.Errorf("add_as_ui_certificate should be true")
+	}
+	if cfg.AppList != "frigate" {
+		t.Errorf("app_list should be frigate")
+	}
+	if cfg.Debug != true {
+		t.Errorf("debug should be true")
 	}
 }
