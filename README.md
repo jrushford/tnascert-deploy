@@ -93,8 +93,26 @@
    section on the commandline.  All 3 sections can be loaded and have 
    certificates deployed in turn by listing all 3 sections on the 
    commandline.
+
+   All the key values in the INI file may be loaded from the OS environment
+   using the syntax ***${VARIABLE_NAME}***.  The variable must be set in 
+   the environment in order to use it.  If the environment variable is not
+   set, the program will exit with an error message while loading the configuration
+   file.  
+
+   For example to set the FQDN of the ***connect_host*** and other sensitive fields 
+   from the environment use:
+
+   connect_host = ${CONNECT_HOST}.${DOMAIN_NAME}
+   or
+   connect_host = ${CONNECT_HOST}
    
-   ```
+   api_key = ${API_KEY}
+   username = ${USERNAME}
+   password = ${PASSWORD}
+
+## Sample configuration files
+
 [deploy_default]
 api_key = 1-ZFhoN97YrxqWg5GIR3XjhPNuaO7NKAwDBbwCashgTCi0z4Mfy9sYo8e8g4WPMCO2
 private_key_path = test_files/privkey.pem
@@ -147,6 +165,25 @@ add_as_app_certificate = true
 app_list = gitea, webdav, frigate
 timeoutSeconds = 10
 debug = false
+
+# sample configuration using some environment variables
+[nas04]
+api_key = ${API_KEY}
+cert_basename = letsencrypt
+private_key_path = test_files/privkey.pem
+full_chain_path = test_files/fullchain.pem
+client_api = wsapi
+connect_host = ${CONNECT_HOST}.${DOMAIN_NAME}
+protocol = wss
+tls_skip_verify = true
+delete_old_certs = true
+add_as_ui_certificate = false
+add_as_ftp_certificate = true
+add_as_app_certificate = true
+app_list = gitea, webdav, frigate
+timeoutSeconds = 10
+debug = false
+
 ```
 
 #### Configuration File settings
