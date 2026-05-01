@@ -118,6 +118,9 @@ func (c *Config) checkConfig() error {
 
 	// lookup the Password
 	c.Password = os.ExpandEnv(c.Password)
+	if c.ApiKey == "" && c.Username == "" {
+		return fmt.Errorf("no authentication is defined, use an 'api_key' or the 'username' and 'password'")
+	}
 
 	// lookup the cert_basename
 	c.CertBasename = os.ExpandEnv(c.CertBasename)
@@ -127,11 +130,14 @@ func (c *Config) checkConfig() error {
 
 	// lookup the connect_host
 	c.ConnectHost = os.ExpandEnv(c.ConnectHost)
+	if c.ConnectHost == "" {
+		return fmt.Errorf("the required 'connect_host' parameter is not defined")
+	}
 
 	// lookup the client_api
 	c.ClientApi = os.ExpandEnv(c.ClientApi)
 	if c.ClientApi == "" {
-		c.ClientApi = "wsapi"
+		c.ClientApi = Default_protocol
 	} else if c.ClientApi != "restapi" && c.ClientApi != "wsapi" {
 		return fmt.Errorf("invalid client_api '%s' use 'restapi' or 'wsapi'", c.ClientApi)
 	}
@@ -147,13 +153,13 @@ func (c *Config) checkConfig() error {
 	//lookup the full_chain_path
 	c.FullChainPath = os.ExpandEnv(c.FullChainPath)
 	if c.FullChainPath == "" {
-		return fmt.Errorf("fullchain_path is not defined")
+		return fmt.Errorf("the required 'fullchain_path' is not defined")
 	}
 
 	// lookup the private_key_path
 	c.PrivateKeyPath = os.ExpandEnv(c.PrivateKeyPath)
 	if c.PrivateKeyPath == "" {
-		return fmt.Errorf("private_key_path is not defined")
+		return fmt.Errorf("the required 'private_key_path' is not defined")
 	}
 
 	// lookup the port
