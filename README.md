@@ -94,11 +94,11 @@
    certificates deployed in turn by listing all 3 sections on the 
    commandline.
 
-   All the key values in the INI file may be loaded from the OS environment
-   using the syntax ***${VARIABLE_NAME}***.  The variable must be set in 
-   the environment in order to use it.  If the environment variable is not
-   set, the program will exit with an error message while loading the configuration
-   file.  
+   Since version 2.2, all the key values in the INI file may be loaded from
+   the OS environment using the syntax ***${VARIABLE_NAME}***.  The variable
+   must be set in the environment in order to use it.  If the environment
+   variable is not set, the program will exit with an error message while
+   loading the configuration file. 
 
    For example to set the FQDN of the ***connect_host*** and other sensitive fields 
    from the environment use:
