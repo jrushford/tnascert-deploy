@@ -113,76 +113,76 @@
 
 ## Sample configuration files
 
-[deploy_default]
-api_key = 1-ZFhoN97YrxqWg5GIR3XjhPNuaO7NKAwDBbwCashgTCi0z4Mfy9sYo8e8g4WPMCO2
-private_key_path = test_files/privkey.pem
-full_chain_path = test_files/fullchain.pem
-cert_basename = letsencrypt
-client_api = wsapi
-connect_host = nas01.mydomain.com
-protocol = wss
-tls_skip_verify = false
-delete_old_certs = true
-add_as_ui_certificate = true
-add_as_ftp_certificate = true
-add_as_app_certificate = true
-app_list = webdav
-timeoutSeconds = 10
-debug = false
-
+[deploy_default]  
+api_key = 1-ZFhoN97YrxqWg5GIR3XjhPNuaO7NKAwDBbwCashgTCi0z4Mfy9sYo8e8g4WPMCO2  
+private_key_path = test_files/privkey.pem  
+full_chain_path = test_files/fullchain.pem  
+cert_basename = letsencrypt  
+client_api = wsapi  
+connect_host = nas01.mydomain.com  
+protocol = wss  
+tls_skip_verify = false  
+delete_old_certs = true  
+add_as_ui_certificate = true  
+add_as_ftp_certificate = true  
+add_as_app_certificate = true  
+app_list = webdav  
+timeoutSeconds = 10  
+debug = false  
+  
 # sample production config
-[nas02]
-api_key = 1-ZFhoN97YrxqWg5GIR3XjhPNuaO7NKAwDBbwCashgTCi0z4Mfy9sYo8e8g4WPMCO2
-private_key_path = test_files/privkey.pem
-full_chain_path = test_files/fullchain.pem
-cert_basename = letsencrypt
-client_api = restapi
-connect_host = nas02.mydomain.com
-protocol = https
-tls_skip_verify = false
-delete_old_certs = true
-add_as_ui_certificate = true
-add_as_ftp_certificate = true
-add_as_app_certificate = true
-app_list = gitea, webdav
-timeoutSeconds = 10
-debug = false
-
+[nas02]  
+api_key = 1-ZFhoN97YrxqWg5GIR3XjhPNuaO7NKAwDBbwCashgTCi0z4Mfy9sYo8e8g4WPMCO2  
+private_key_path = test_files/privkey.pem  
+full_chain_path = test_files/fullchain.pem  
+cert_basename = letsencrypt  
+client_api = restapi  
+connect_host = nas02.mydomain.com  
+protocol = https  
+tls_skip_verify = false  
+delete_old_certs = true  
+add_as_ui_certificate = true  
+add_as_ftp_certificate = true  
+add_as_app_certificate = true  
+app_list = gitea, webdav  
+timeoutSeconds = 10  
+debug = false  
+  
 # sample production config
-[nas03]
-api_key = 2-AFhoB89YqxrWg5GIR3XjhPFUao7NKAwDBbWcAshgTCi0z47fM9sYo8e8g4wpMCO2
-cert_basename = letsencrypt
-private_key_path = test_files/privkey.pem
-full_chain_path = test_files/fullchain.pem
-client_api = wsapi
-connect_host = nas03.mydomain.com
-protocol = wss
-tls_skip_verify = true
-delete_old_certs = true
-add_as_ui_certificate = false
-add_as_ftp_certificate = true
-add_as_app_certificate = true
-app_list = gitea, webdav, frigate
-timeoutSeconds = 10
-debug = false
-
+[nas03]  
+api_key = 2-AFhoB89YqxrWg5GIR3XjhPFUao7NKAwDBbWcAshgTCi0z47fM9sYo8e8g4wpMCO2  
+cert_basename = letsencrypt  
+private_key_path = test_files/privkey.pem  
+full_chain_path = test_files/fullchain.pem  
+client_api = wsapi  
+connect_host = nas03.mydomain.com  
+protocol = wss  
+tls_skip_verify = true  
+delete_old_certs = true  
+add_as_ui_certificate = false  
+add_as_ftp_certificate = true  
+add_as_app_certificate = true  
+app_list = gitea, webdav, frigate  
+timeoutSeconds = 10  
+debug = false  
+  
 # sample configuration using some environment variables
-[nas04]
-api_key = ${API_KEY}
-cert_basename = letsencrypt
-private_key_path = test_files/privkey.pem
-full_chain_path = test_files/fullchain.pem
-client_api = wsapi
-connect_host = ${CONNECT_HOST}.${DOMAIN_NAME}
-protocol = wss
-tls_skip_verify = true
-delete_old_certs = true
-add_as_ui_certificate = false
-add_as_ftp_certificate = true
-add_as_app_certificate = true
-app_list = gitea, webdav, frigate
-timeoutSeconds = 10
-debug = false
+[nas04]  
+api_key = ${API_KEY}  
+cert_basename = letsencrypt  
+private_key_path = test_files/privkey.pem  
+full_chain_path = test_files/fullchain.pem  
+client_api = wsapi  
+connect_host = ${CONNECT_HOST}.${DOMAIN_NAME}  
+protocol = wss  
+tls_skip_verify = true  
+delete_old_certs = true  
+add_as_ui_certificate = false  
+add_as_ftp_certificate = true  
+add_as_app_certificate = true  
+app_list = gitea, webdav, frigate  
+timeoutSeconds = 10  
+debug = false  
 
 ```
 
