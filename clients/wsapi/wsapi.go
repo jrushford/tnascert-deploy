@@ -349,6 +349,10 @@ func deleteCertificates(client TrueNASWebSocket) error {
 			}
 			continue
 		}
+		// skip if the certificate name prefix does not match the CertBasename
+		if !strings.HasPrefix(k, client.Cfg.CertBasename) {
+			continue
+		}
 
 		arg := []int64{v}
 		job, err := client.WSClient.CallWithJob("certificate.delete", arg, func(progress float64, state string, desc string) {
