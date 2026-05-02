@@ -19,11 +19,12 @@ package config
 
 import (
 	"fmt"
-	"github.com/ncruces/go-strftime"
-	"gopkg.in/ini.v1"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/ncruces/go-strftime"
+	"gopkg.in/ini.v1"
 )
 
 const (
@@ -41,6 +42,7 @@ type Config struct {
 	ClientApi              string `ini:"client_api"`             // Client type, 'wsapi' (default) or restapi
 	ConnectHost            string `ini:"connect_host"`           // TrueNAS hostname
 	DeleteOldCertsStr      string `ini:"delete_old_certs"`       // whether to remove old certificates, String value
+	StrictBasenameMatchStr string `ini:"strict_basename_match"`  // whether to use a strict basename match when deleting certs, String value
 	FullChainPath          string `ini:"full_chain_path"`        // path to full_chain.pem
 	PortStr                string `ini:"port"`                   // TrueNAS API endpoint port, String value
 	Protocol               string `ini:"protocol"`               // websocket protocol 'ws' or 'wss' 'wss' is default
@@ -55,6 +57,7 @@ type Config struct {
 	Username               string `ini:"username"`               // an admin user name
 	Password               string `ini:"password"`               // admin users password
 	DeleteOldCerts         bool   // whether to remove old certificates
+	StrictBasenameMatch    bool   // whether to match the certificate basename strictly
 	Port                   uint64 // TrueNAS API endpoint port
 	TlsSkipVerify          bool   // strict SSL cert verification of the endpoint
 	AddAsUiCertificate     bool   // Install as the active UI certificate if true.
@@ -148,6 +151,19 @@ func (c *Config) checkConfig() error {
 		c.DeleteOldCerts = b
 	} else {
 		return err
+	}
+
+	// lookup strict_basename_match
+	if c.StrictBasenameMatchStr != "" {
+		c.StrictBasenameMatchStr = os.ExpandEnv(c.StrictBasenameMatchStr)
+		if b, err := strconv.ParseBool(c.StrictBasenameMatchStr); err == nil {
+			c.StrictBasenameMatch = b
+		} else {
+			return err
+		}
+	} else {
+		// Default to the original app behaviour if the key is not specified
+		c.StrictBasenameMatch = false
 	}
 
 	//lookup the full_chain_path
