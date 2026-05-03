@@ -27,6 +27,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 	"tnascert-deploy/clients"
@@ -389,12 +390,26 @@ func addAsUICertificate(client *TrueNASRest) error {
 
 func deleteCertificates(client *TrueNASRest) error {
 	log.Printf("deleting old certificates with prefix '%s'", client.Cfg.CertBasename)
+
+	// Prepare regex
+	pattern := fmt.Sprintf(`^%s-\d{4}-\d{2}-\d{2}-\d+$`, regexp.QuoteMeta(client.Cfg.CertBasename))
+	re := regexp.MustCompile(pattern)
+	var basenameMatch bool
+
 	for k, v := range certsList {
 		if strings.Compare(k, certName) == 0 {
 			log.Printf("skip the deletion of the active UI certificate %s", certName)
 			continue
 		}
-		if strings.HasPrefix(k, client.Cfg.CertBasename) {
+		if client.Cfg.StrictBasenameMatch {
+			basenameMatch = re.MatchString(k)
+			log.Printf("Regex match %s against %s: %v", client.Cfg.CertBasename, k, basenameMatch)
+		} else {
+			basenameMatch = strings.HasPrefix(k, client.Cfg.CertBasename)
+			log.Printf("Prefix match %s against %s: %v", client.Cfg.CertBasename, k, basenameMatch)
+		}
+
+		if basenameMatch {
 			URL := fmt.Sprintf("%s/certificate/id/%d", client.Url, v)
 			r, err := http.NewRequest(http.MethodDelete, URL, nil)
 			resp, err := client.HttpClient.Do(r)

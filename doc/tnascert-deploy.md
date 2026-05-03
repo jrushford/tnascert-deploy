@@ -85,6 +85,9 @@ You could also for example use multiple environment variables such as:
                               the RESTful v2.0 API.
  - **delete_old_certs**       - (optional, default is **false**) whether to remove old 
                               certificates, default is false
+ - **strict_basename_match**  - (optional, default is **false**) when true, certificate names are
+                              checked more strictly before being deleted to reduce the chance of
+                              the basename matching incorrect certs
  - **full_chain_path**        - (required), full path name to the certificate full_chain.pem
  - **private_key_path**       - (required), full path name to the certificate private_key.pem
  - **port**                   - (optional, default is **443**) TrueNAS API endpoint port

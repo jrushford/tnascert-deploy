@@ -20,12 +20,14 @@ package wsapi
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/truenas/api_client_golang/truenas_api"
 	"log"
 	"os"
+	"regexp"
 	"strings"
 	"tnascert-deploy/clients"
 	"tnascert-deploy/config"
+
+	"github.com/truenas/api_client_golang/truenas_api"
 )
 
 const EndPoint = "/api/current"
@@ -342,6 +344,11 @@ func deleteCertificates(client TrueNASWebSocket) error {
 		return fmt.Errorf("certificate %s was not found in the certificates list", certName)
 	}
 
+	// Prepare regex
+	pattern := fmt.Sprintf(`^%s-\d{4}-\d{2}-\d{2}-\d+$`, regexp.QuoteMeta(client.Cfg.CertBasename))
+	re := regexp.MustCompile(pattern)
+	var basenameMatch bool
+
 	for k, v := range certsList {
 		if strings.Compare(k, certName) == 0 {
 			if client.Cfg.Debug {
@@ -350,7 +357,15 @@ func deleteCertificates(client TrueNASWebSocket) error {
 			continue
 		}
 		// skip if the certificate name prefix does not match the CertBasename
-		if !strings.HasPrefix(k, client.Cfg.CertBasename) {
+		if client.Cfg.StrictBasenameMatch {
+			basenameMatch = re.MatchString(k)
+			log.Printf("Regex match %s against %s: %v", client.Cfg.CertBasename, k, basenameMatch)
+		} else {
+			basenameMatch = strings.HasPrefix(k, client.Cfg.CertBasename)
+			log.Printf("Prefix match %s against %s: %v", client.Cfg.CertBasename, k, basenameMatch)
+		}
+
+		if !basenameMatch {
 			continue
 		}
 
