@@ -6,7 +6,7 @@
 With the proper setting the tool supports deploying certificates to the following TrueNAS versions:
 
 | Product/Version | Supported API |
-| - | - |
+| --- | --- |
 | TrueNAS-CORE 13.3 | RESTful API v2.0 |
 | zVault 13.3-MASTER-202505042329 | RESTful API v2.0 |
 | TrueNAS-SCALE 24.10 | RESTful API v2.0 |
@@ -22,7 +22,7 @@ The tool connects to the JSON-RPC 2.0 WebSocket API or RESTful v2.0 API endpoint
 
 **tnascert-deploy** utilizes an INI configuration file where multiple TrueNAS systems may be configured in separate sections of the file.  The user of the tool specifies one or more TrueNAS systems by their section name on the commandline defined in the configuration file in order to deploy certificates.
 
-The tool may be utilized as part of an ACME (Automated Certificate Management Environment) process to deploy new or renewal certficates to TrueNAS systems, see the **sample-scripts** directory for examples.  The command line usage is as follows:
+The tool may be utilized as part of an ACME (Automated Certificate Management Environment) process to deploy new or renewal certficates to TrueNAS systems, see the [sample-scripts](/sample-scripts) directory for examples.  The command line usage is as follows:
 
 ```
 Usage: tnascert-deploy [-hv] [-c value] config_section ... config_section
@@ -188,7 +188,7 @@ In order to authenticate with a TrueNAS system, the user must either use the Tru
 [id1]: ## "You must use either api_key or username/password"
 
 | Key Name | Required |Default | Description |
-| - | - | - | - |
+| --- | --- | --- | --- |
 | **api_key** [:information_source:][id1] | N | - | TrueNAS 64 byte API Key for login (this is the preferred login method). |
 | **username** [:information_source:][id1] | N | - | TrueNAS username with admin privileges (API key is preferred for login). |
 | **password** [:information_source:][id1] | N | - | TrueNAS password for user with admin privileges (API key is preferred for login). |
