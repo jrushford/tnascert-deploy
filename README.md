@@ -38,9 +38,11 @@ Example to deploy certficates to two TrueNAS machines nas01 and nas02:
 
 ##  Getting Started
 
-NOTE: If your NAS is currently running with a self-signed or expired certificate, please set `tls_skip_verify` to `true` in the configuration file to avoid connection TLS verification errors.
-
 Precompiled releases of **tnascert-deploy** are available for FreeBSD, Debian Linux, MacOS, or Windows 11. See the [Releases](https://github.com/truenas/tnascert-deploy/releases) section of this repository. The current Release is [2.2](https://github.com/truenas/tnascert-deploy/releases/tag/2.2).
+
+> [!NOTE]
+> If your NAS is currently running with a self-signed or expired certificate, please set `tls_skip_verify` to `true` in the configuration file to avoid connection TLS verification errors.
+
 
 ### Testing
 
