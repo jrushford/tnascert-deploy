@@ -123,6 +123,7 @@ connect_host = nas01.mydomain.com
 protocol = wss  
 tls_skip_verify = false  
 delete_old_certs = true  
+strict_basename_match = false
 add_as_ui_certificate = true  
 add_as_ftp_certificate = true  
 add_as_app_certificate = true  
@@ -141,6 +142,7 @@ connect_host = nas02.mydomain.com
 protocol = https  
 tls_skip_verify = false  
 delete_old_certs = true  
+strict_basename_match = false
 add_as_ui_certificate = true  
 add_as_ftp_certificate = true  
 add_as_app_certificate = true  
@@ -159,6 +161,7 @@ connect_host = nas03.mydomain.com
 protocol = wss  
 tls_skip_verify = true  
 delete_old_certs = true  
+strict_basename_match = false
 add_as_ui_certificate = false  
 add_as_ftp_certificate = true  
 add_as_app_certificate = true  
@@ -177,6 +180,7 @@ connect_host = ${CONNECT_HOST}.${DOMAIN_NAME}
 protocol = wss  
 tls_skip_verify = true  
 delete_old_certs = true  
+strict_basename_match = false
 add_as_ui_certificate = false  
 add_as_ftp_certificate = true  
 add_as_app_certificate = true  
@@ -210,6 +214,9 @@ and **password**.
                               the RESTful v2.0 API.
  - **delete_old_certs**       - (optional, default is **false**) whether to remove old 
                               certificates, default is false
+ - **strict_basename_match**  - (optional, default is **false**) when true, certificate names
+                              are checked more strictly before being deleted to reduce the
+                              chance of the basename matching incorrect certs
  - **full_chain_path**        - (required), full path name to the certificate full_chain.pem
  - **private_key_path**       - (required), full path name to the certificate private_key.pem
  - **port**                   - (optional, default is **443**) TrueNAS API endpoint port
