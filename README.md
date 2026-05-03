@@ -78,7 +78,7 @@ The configuration file uses the INI format that lists section names in square br
 
 The following shows an example configuration file with three TrueNAS systems configured.  In the example there are 3 sections defined: `deploy_default`, `nas02`, and `nas03`.  If no section is listed on the **tnascert-deploy** commandline, the `deploy_default` configuration will be loaded and certificates will be deployed to the TrueNAS host defined in that section.  Each individual NAS configuration can be loaded by listing only that desired section on the commandline. All 3 sections can be loaded and have certificates deployed in turn by listing all 3 sections on the commandline:
 
-    ./tnas-cert-deploy deploy_default nas02 nas03
+    ./tnascert-deploy deploy_default nas02 nas03
 
 Since version 2.2, all the key values in the INI file may be loaded from the OS environment using the syntax ***${VARIABLE_NAME}***.  The variable must be set in the environment in order to use it.  If the environment variable is not set, the program will exit with an error message while loading the configuration file. 
 
