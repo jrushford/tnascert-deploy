@@ -80,7 +80,10 @@ The following shows an example configuration file with three TrueNAS systems con
 
     ./tnascert-deploy deploy_default nas02 nas03
 
-Since version 2.2, all the key values in the INI file may be loaded from the OS environment using the syntax ***${VARIABLE_NAME}***.  The variable must be set in the environment in order to use it.  If the environment variable is not set, the program will exit with an error message while loading the configuration file. 
+Since version 2.2, all the key values in the INI file may be loaded from the OS environment using the syntax `${VARIABLE_NAME}`.  The variable must be set in the environment in order to use it.  If the environment variable is not set, the program will exit with an error message while loading the configuration file. 
+
+> [!IMPORTANT]
+> Where needed, make sure you EXPORT the environment variables so they are available to the **tnascert-deploy** process.
 
 For example, to set the FQDN of the `connect_host` and other sensitive fields from the environment use:
 
@@ -92,9 +95,6 @@ For example, to set the FQDN of the `connect_host` and other sensitive fields fr
 You can include multiple environment variables in a single entry:
 
     connect_host = ${CONNECT_HOST}.${DOMAIN_NAME}
-
-> [!IMPORTANT]
-> Where needed, make sure you EXPORT the environment variables so they are available to the **tnascert-deploy** process.
 
 ### Sample configuration files
 
