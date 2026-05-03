@@ -189,9 +189,9 @@ In order to authenticate with a TrueNAS system, the user must either use the Tru
 
 | Key Name | Required |Default | Description |
 | - | - | - | - |
-| **api_key** [:exclamation:][id1] | N | - | TrueNAS 64 byte API Key for login (this is the preferred login method). |
-| **username** [:exclamation:][id1] | N | - | TrueNAS username with admin privileges (API key is preferred for login). |
-| **password** [:exclamation:][id1] | N | - | TrueNAS password for user with admin privileges (API key is preferred for login). |
+| **api_key** [:information_source:][id1] | N | - | TrueNAS 64 byte API Key for login (this is the preferred login method). |
+| **username** [:information_source:][id1] | N | - | TrueNAS username with admin privileges (API key is preferred for login). |
+| **password** [:information_source:][id1] | N | - | TrueNAS password for user with admin privileges (API key is preferred for login). |
 | **cert_basename** | N | **tnascert-deploy** | Basename for the certificate naming in TrueNAS. |
 | **connect_host** | Y | - | TrueNAS DNS Fully Qualified Domain Name (FQDN) or IP address. |
 | **client_api** | N | **wsapi** | The TrueNAS API to use: `wsapi` for the JSON-RPC 2.0 websocket API or `restapi` for the RESTful v2.0 API. |
