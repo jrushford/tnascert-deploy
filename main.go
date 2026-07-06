@@ -30,7 +30,7 @@ import (
 )
 
 // application release
-const release = "2.2"
+const release = "2.3"
 
 func NewClient(cfg *config.Config) (clients.Client, error) {
 	if cfg.ClientApi == "restapi" {
