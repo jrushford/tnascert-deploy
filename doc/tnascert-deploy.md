@@ -134,7 +134,7 @@ The available keys are:
 **app_list**  (optional, no default)
 : A comma separated list of docker apps that you wish to have the newly imported certificate used. Apps in the list are only set to used the certificate if they have one assigned already. You must enable **add_as_app_certificate** to process the list.
 
-**timeoutSeconds**  (optional, default is **10**)
+**timeout_seconds**  (optional, default is **10**)
 : the number of seconds after which the truenas client calls fail
 
 **debug**  (optional, default is **false**)

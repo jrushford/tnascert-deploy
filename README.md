@@ -116,7 +116,7 @@ add_as_ui_certificate = true
 add_as_ftp_certificate = true  
 add_as_app_certificate = true  
 app_list = webdav  
-timeoutSeconds = 10  
+timeout_seconds = 10  
 debug = false  
 ```
 
@@ -137,7 +137,7 @@ add_as_ui_certificate = true
 add_as_ftp_certificate = true  
 add_as_app_certificate = true  
 app_list = gitea, webdav  
-timeoutSeconds = 10  
+timeout_seconds = 10  
 debug = false  
   
 # sample production config
@@ -156,7 +156,7 @@ add_as_ui_certificate = false
 add_as_ftp_certificate = true  
 add_as_app_certificate = true  
 app_list = gitea, webdav, frigate  
-timeoutSeconds = 10  
+timeout_seconds = 10  
 debug = false  
 ```
 
@@ -177,7 +177,7 @@ add_as_ui_certificate = false
 add_as_ftp_certificate = true  
 add_as_app_certificate = true  
 app_list = gitea, webdav, frigate  
-timeoutSeconds = 10  
+timeout_seconds = 10  
 debug = false  
 ```
 
@@ -206,7 +206,7 @@ In order to authenticate with a TrueNAS system, the user must either use the Tru
 | **add_as_ftp_certificate** | N | **false** | Install as the active FTP certificate if `true`. |
 | **add_as_app_certificate** | N | **false** | If `true`, install the certificate for apps listed in the `app_list` |
 | **app_list** | N | - | A comma separated list of docker apps that you wish to have the newly imported certificate used. Only works if they have a certificate assigned already. You must enable `add_as_app_certificate` to process the list. |
-| **timeoutSeconds** | N | **10** | The number of seconds after which the TrueNAS client calls fail. |
+| **timeout_seconds** | N | **10** | The number of seconds after which the TrueNAS client calls fail. |
 | **debug** | N | **false** | Debug logging is enabled if `true`. |
 
 [^1]: Websockets (`ws` and `wss`) are only for TrueNAS-SCALE systems utilizing the JSON-RPC 2.0 websocket API.  Use `http` or `https` for systems utilizing the RESTful v2.0 API.
